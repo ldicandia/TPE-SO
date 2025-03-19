@@ -56,7 +56,6 @@ unsigned char choose_random_move() {
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     
@@ -64,21 +63,16 @@ int main(int argc, char *argv[]) {
     GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState));
     GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
     
-    printf("Jugador iniciado y listo para jugar.\n");
     
     while (!state->game_over) {
         sem_wait(&sync->sem_view_ready);
-        
         // Generar un movimiento aleatorio y enviarlo al máster
         unsigned char move = choose_random_move();
         write(STDOUT_FILENO, &move, sizeof(move)); // El máster leerá esto por pipe
-        
-        printf("DEBUG: Jugador envió movimiento %d\n", move);
-        
+  
         sem_post(&sync->sem_master_ready);
         usleep(500000); // Esperar 500ms para simular reacción del jugador
     }
     
-    printf("Player exiting.\n");
     return 0;
 }

@@ -71,14 +71,7 @@ void print_board(GameState *state) {
             display_board[y][x] = '0' + state->board[y * state->width + x];
         }
     }
-
-    for (int y = 0; y < state->height; y++) {
-        for (int x = 0; x < state->width; x++) {
-            if(display_board[y][x] == '0'){
-                display_board[y][x] = '@';
-            }
-        }
-    }
+        
 
     // Colocar jugadores en el tablero
     for (int i = 0; i < state->num_players; i++) {
@@ -118,12 +111,13 @@ int main(int argc, char *argv[]) {
     GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
     
     while (!state->game_over) {
-        //sem_wait(&sync->A); // Espera a que el máster lo libere
+        //sem_wait(&sync->A); // Espera a que el máster lo libere   FIXEAR ESTO!!!
         sleep(1);
         print_board(state);
         sem_post(&sync->B); // Notifica al máster que terminó
     }
     
     printf("Game Over!\n");
+    exit(1);
     return 0;
 }
