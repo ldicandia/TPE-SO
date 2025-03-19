@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <semaphore.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <time.h>
 
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
@@ -18,36 +19,30 @@ typedef struct {
     unsigned int valid_moves;
     unsigned short x, y;
     pid_t pid;
-    bool can_move;
+    bool active;
 } Player;
 
 typedef struct {
     unsigned short width;
     unsigned short height;
-    unsigned int player_count;
+    unsigned int num_players;
     Player players[9];
     bool game_over;
     int board[];
 } GameState;
 
 typedef struct {
-    sem_t A, B, C, D, E;
-    unsigned int F;
+    sem_t A;
+    sem_t B;
 } GameSync;
 
-void *connect_to_shm(char *name, size_t size) {
+void *attach_shared_memory(const char *name, size_t size) {
     int fd = shm_open(name, O_RDWR, 0666);
     if (fd == -1) {
         perror("shm_open");
         exit(EXIT_FAILURE);
     }
-
-    if (ftruncate(fd, size) == -1){
-      perror("ftruncate");
-      exit(EXIT_FAILURE);
-    }
-
-    void *ptr = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+    void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (ptr == MAP_FAILED) {
         perror("mmap");
         exit(EXIT_FAILURE);
@@ -56,40 +51,79 @@ void *connect_to_shm(char *name, size_t size) {
 }
 
 void print_board(GameState *state) {
-    printf("Esperando a que comience el juego...\n");
-    //system("clear");
-    printf("=== ChompChamps ===\n");
-    printf("Tablero: %dx%d\n", state->width, state->height);
+    system("clear");
+    printf("\n=== ChompChamps ===\n");
+    
+    // Mostrar información de los jugadores
+
+    printf("\nDEBUG: Estado de los jugadores\n");
+    
+    for (int i = 0; i < state->num_players; i++) {
+        printf("Jugador %s - Pos: (%d, %d), Score: %d, Activo: %d\n",
+               state->players[i].name, state->players[i].x, state->players[i].y,
+               state->players[i].score, state->players[i].active);
+    }
+    
+    // Copiar el tablero para poder sobreescribirlo con jugadores
+    char display_board[state->height][state->width];
     for (int y = 0; y < state->height; y++) {
         for (int x = 0; x < state->width; x++) {
-            int cell = state->board[y * state->width + x];
-            if (cell == -1) {
-                printf(". ");
-            } else {
-                printf("%d ", cell);
+            display_board[y][x] = '0' + state->board[y * state->width + x];
+        }
+    }
+
+    for (int y = 0; y < state->height; y++) {
+        for (int x = 0; x < state->width; x++) {
+            if(display_board[y][x] == '0'){
+                display_board[y][x] = '@';
             }
+        }
+    }
+
+    // Colocar jugadores en el tablero
+    for (int i = 0; i < state->num_players; i++) {
+        state->players[i].active = 0;
+        if (state->players[i].active) {
+            unsigned short px = state->players[i].x;
+            unsigned short py = state->players[i].y;
+            
+            if (px < state->width && py < state->height) {
+                display_board[py][px] = '/';
+            }
+        }
+    }
+
+
+    // Imprimir el tablero modificado
+    for (int y = 0; y < state->height; y++) {
+        for (int x = 0; x < state->width; x++) {
+            printf(" %c ", display_board[y][x]);
         }
         printf("\n");
     }
-    printf("\nJugadores:\n");
-    for (unsigned int i = 0; i < state->player_count; i++) {
-        printf("%s - Score: %d, Posición: (%d, %d)\n",
-               state->players[i].name,
-               state->players[i].score,
-               state->players[i].x,
-               state->players[i].y);
+    
+    printf("\nPlayers:\n");
+    for (int i = 0; i < state->num_players; i++) {
+        printf("%s - Score: %d\n", state->players[i].name, state->players[i].score);
     }
 }
 
-int main() {
-    GameState *game_state = (GameState *)connect_to_shm(SHM_GAME_STATE, sizeof(GameState));
-    GameSync *game_sync = (GameSync *)connect_to_shm(SHM_GAME_SYNC, sizeof(GameSync));
-
-    while (!game_state->game_over) {
-        //sem_wait(&game_sync->A);
-        print_board(game_state);
-        sem_post(&game_sync->B);
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
-    printf("Juego terminado.\n");
+    
+    GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState));
+    GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
+    
+    while (!state->game_over) {
+        //sem_wait(&sync->A); // Espera a que el máster lo libere
+        sleep(1);
+        print_board(state);
+        sem_post(&sync->B); // Notifica al máster que terminó
+    }
+    
+    printf("Game Over!\n");
     return 0;
 }
