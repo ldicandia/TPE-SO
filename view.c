@@ -11,7 +11,6 @@
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
 
-// Estructuras basadas en el enunciado
 typedef struct {
     char name[16];
     unsigned int score;
@@ -28,21 +27,26 @@ typedef struct {
     unsigned int player_count;
     Player players[9];
     bool game_over;
-    int board[]; // El tablero se almacena al final
+    int board[];
 } GameState;
 
 typedef struct {
-    sem_t print_needed;
-    sem_t print_done;
+    sem_t A, B, C, D, E;
+    unsigned int F;
 } GameSync;
 
-// Función para conectar la vista a una memoria compartida
 void *connect_to_shm(char *name, size_t size) {
     int fd = shm_open(name, O_RDWR, 0666);
     if (fd == -1) {
         perror("shm_open");
         exit(EXIT_FAILURE);
     }
+
+    if (ftruncate(fd, size) == -1){
+      perror("ftruncate");
+      exit(EXIT_FAILURE);
+    }
+
     void *ptr = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
     if (ptr == MAP_FAILED) {
         perror("mmap");
@@ -51,25 +55,22 @@ void *connect_to_shm(char *name, size_t size) {
     return ptr;
 }
 
-// Función para imprimir el tablero
 void print_board(GameState *state) {
-    //system("clear"); // Limpiar pantalla (opcional)
-
+    printf("Esperando a que comience el juego...\n");
+    //system("clear");
     printf("=== ChompChamps ===\n");
     printf("Tablero: %dx%d\n", state->width, state->height);
-
     for (int y = 0; y < state->height; y++) {
         for (int x = 0; x < state->width; x++) {
             int cell = state->board[y * state->width + x];
             if (cell == -1) {
-                printf(". "); // Celda vacía
+                printf(". ");
             } else {
-                printf("%d ", cell); // Celda con recompensa o jugador
+                printf("%d ", cell);
             }
         }
         printf("\n");
     }
-
     printf("\nJugadores:\n");
     for (unsigned int i = 0; i < state->player_count; i++) {
         printf("%s - Score: %d, Posición: (%d, %d)\n",
@@ -81,16 +82,14 @@ void print_board(GameState *state) {
 }
 
 int main() {
-    // Conectar a las memorias compartidas
     GameState *game_state = (GameState *)connect_to_shm(SHM_GAME_STATE, sizeof(GameState));
     GameSync *game_sync = (GameSync *)connect_to_shm(SHM_GAME_SYNC, sizeof(GameSync));
 
     while (!game_state->game_over) {
-        sem_wait(&game_sync->print_needed); // Esperar señal del máster
-        print_board(game_state);            // Imprimir estado
-        sem_post(&game_sync->print_done);   // Avisar al máster que terminó
+        //sem_wait(&game_sync->A);
+        print_board(game_state);
+        sem_post(&game_sync->B);
     }
-
     printf("Juego terminado.\n");
     return 0;
 }
