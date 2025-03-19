@@ -90,7 +90,13 @@ void print_board(GameState *state) {
     // Imprimir el tablero modificado
     for (int y = 0; y < state->height; y++) {
         for (int x = 0; x < state->width; x++) {
-            printf(" %c ", display_board[y][x]);
+            char elem = display_board[y][x];
+            if( elem == '0'){
+                printf("\033[31m %c \033[0m", elem);
+            }
+            else{
+                printf(" %c ", elem);
+            }
         }
         printf("\n");
     }
