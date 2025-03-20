@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
     
     while (!state->game_over) {
-        sem_wait(&sync->A);
+        sem_wait(&sync->B);
         //sleep(1);
         print_board(state);
         sem_post(&sync->A);
