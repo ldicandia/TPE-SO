@@ -74,17 +74,17 @@ void print_board(GameState *state) {
         
 
     // Colocar jugadores en el tablero
-    for (int i = 0; i < state->num_players; i++) {
-        state->players[i].active = 0;
-        if (state->players[i].active) {
-            unsigned short px = state->players[i].x;
-            unsigned short py = state->players[i].y;
+    // for (int i = 0; i < state->num_players; i++) {
+    //     state->players[i].active = 0;
+    //     if (state->players[i].active) {
+    //         unsigned short px = state->players[i].x;
+    //         unsigned short py = state->players[i].y;
             
-            if (px < state->width && py < state->height) {
-                display_board[py][px] = '/';
-            }
-        }
-    }
+    //         if (px < state->width && py < state->height) {
+    //             display_board[py][px] = '/';
+    //         }
+    //     }
+    // }
 
 
     // Imprimir el tablero modificado
@@ -117,10 +117,10 @@ int main(int argc, char *argv[]) {
     GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
     
     while (!state->game_over) {
-        //sem_wait(&sync->A); // Espera a que el máster lo libere   FIXEAR ESTO!!!
-        sleep(1);
+        sem_wait(&sync->A);
+        //sleep(1);
         print_board(state);
-        sem_post(&sync->B); // Notifica al máster que terminó
+        sem_post(&sync->A);
     }
     
     printf("Game Over!\n");
