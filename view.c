@@ -36,13 +36,14 @@ typedef struct {
   sem_t B;
 } GameSync;
 
-void *attach_shared_memory(const char *name, size_t size) {
-  int fd = shm_open(name, O_RDWR, 0666);
+void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
+  int fd = shm_open(name, flags, 0666);  // Cambiar a O_RDONLY
   if (fd == -1) {
     perror("shm_open");
     exit(EXIT_FAILURE);
   }
-  void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd,
+                   0);  // Cambiar a PROT_READ
   if (ptr == MAP_FAILED) {
     perror("mmap");
     exit(EXIT_FAILURE);
@@ -79,7 +80,7 @@ void print_board(GameState *state) {
       if (elem == '0') {
         printf("\033[31m %c \033[0m", elem);
       } else if (elem == '/') {
-          printf("\033[32m %c \033[0m", elem);            //harcodeado. corregir
+        printf("\033[32m %c \033[0m", elem);  // harcodeado. corregir
       } else {
         printf(" %c ", elem);
       }
@@ -99,13 +100,15 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState));
-  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
+  GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState),
+                                          O_RDONLY, PROT_READ);
+  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR,
+                                        PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
-    sem_wait(&sync->B);
+    sem_wait(&sync->A);
     print_board(state);
-    sem_post(&sync->A);
+    sem_post(&sync->B);
   }
 
   printf("Game Over!\n");
