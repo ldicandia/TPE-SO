@@ -56,13 +56,16 @@ void print_board(GameState *state) {
   printf("\n=== ChompChamps ===\n");
 
   // Mostrar información de los jugadores
-
   printf("\nDEBUG: Estado de los jugadores\n");
 
   for (int i = 0; i < state->num_players; i++) {
-    printf("Jugador %s - Pos: (%d, %d), Score: %d, Bloqueado: %d\n",
-           state->players[i].name, state->players[i].x, state->players[i].y,
-           state->players[i].score, state->players[i].blocked);
+    if (state->players[i].blocked) {
+      printf("Jugador %s está bloqueado.\n", state->players[i].name);
+    } else {
+      printf("Jugador %s - Pos: (%d, %d), Score: %d, Bloqueado: %d\n",
+             state->players[i].name, state->players[i].x, state->players[i].y,
+             state->players[i].score, state->players[i].blocked);
+    }
   }
 
   // Copiar el tablero para poder sobreescribirlo con jugadores
@@ -94,6 +97,21 @@ void print_board(GameState *state) {
   }
 }
 
+void check_players_blocked(GameState *state) {
+  bool all_blocked = true;
+  for (int i = 0; i < state->num_players; i++) {
+    if (!state->players[i].blocked) {
+      all_blocked = false;
+      break;
+    }
+  }
+
+  if (all_blocked) {
+    printf("Todos los jugadores están bloqueados. Fin del juego.\n");
+    exit(1);
+  }
+}
+
 int main(int argc, char *argv[]) {
   if (argc != 3) {
     fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
@@ -105,8 +123,10 @@ int main(int argc, char *argv[]) {
   GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR,
                                         PROT_READ | PROT_WRITE);
 
-  while (!state->game_over) {
+  while (1) {
     sem_wait(&sync->B);
+    // Verificar si todos los jugadores están bloqueados
+    check_players_blocked(state);
     print_board(state);
     sem_post(&sync->A);
   }

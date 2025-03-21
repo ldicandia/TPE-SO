@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
           sizeof(move));  // El ChompChamps leerá esto por pipe
 
     sem_post(&sync->sem_master_ready);
-    usleep(500000);  // Esperar 500ms para simular reacción del jugador
+    usleep(100000);  // Esperar 500ms para simular reacción del jugador
   }
 
   return 0;
