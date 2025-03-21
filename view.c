@@ -106,9 +106,9 @@ int main(int argc, char *argv[]) {
                                         PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
-    sem_wait(&sync->A);
+    sem_wait(&sync->B);
     print_board(state);
-    sem_post(&sync->B);
+    sem_post(&sync->A);
   }
 
   printf("Game Over!\n");
