@@ -19,7 +19,7 @@ typedef struct {
   unsigned int valid_moves;
   unsigned short x, y;
   pid_t pid;
-  bool active;
+  bool blocked;
 } Player;
 
 typedef struct {
@@ -59,9 +59,9 @@ void print_board(GameState *state) {
   printf("\nDEBUG: Estado de los jugadores\n");
 
   for (int i = 0; i < state->num_players; i++) {
-    printf("Jugador %s - Pos: (%d, %d), Score: %d, Activo: %d\n",
+    printf("Jugador %s - Pos: (%d, %d), Score: %d, Bloqueado: %d\n",
            state->players[i].name, state->players[i].x, state->players[i].y,
-           state->players[i].score, state->players[i].active);
+           state->players[i].score, state->players[i].blocked);
   }
 
   // Copiar el tablero para poder sobreescribirlo con jugadores
