@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  srand(time(NULL));
+  srand(getpid());
   GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState),
                                           O_RDONLY, PROT_READ);
   GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR,
