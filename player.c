@@ -33,7 +33,7 @@ typedef struct {
 
 typedef struct {
   sem_t sem_view_ready;
-  sem_t sem_master_ready;
+  sem_t D;
 } GameSync;
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
@@ -65,14 +65,17 @@ int main(int argc, char *argv[]) {
                                         PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
-    sem_wait(&sync->sem_view_ready);
-    // Generar un movimiento aleatorio y enviarlo al ChompChamps
+    // sem_wait(&sync->sem_view_ready);
+    //   sem_wait(&sync->B);  // Esperar turno
+    usleep(100);
     unsigned char move = choose_random_move();
+
     write(STDOUT_FILENO, &move,
           sizeof(move));  // El ChompChamps leerá esto por pipe
 
-    sem_post(&sync->sem_master_ready);
-    usleep(100000);  // Esperar 500ms para simular reacción del jugador
+    sem_post(&sync->D);  // Notificar que terminó su turno
+
+    usleep(1000);
   }
 
   return 0;
