@@ -20,6 +20,7 @@ typedef struct {
   unsigned short x, y;
   pid_t pid;
   bool active;
+  char *color;
 } Player;
 
 typedef struct {
@@ -67,7 +68,7 @@ int main(int argc, char *argv[]) {
   while (!state->game_over) {
     // sem_wait(&sync->sem_view_ready);
     //   sem_wait(&sync->B);  // Esperar turno
-    usleep(10000);
+    usleep(1000);
     unsigned char move = choose_random_move();
 
     write(STDOUT_FILENO, &move,
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     sem_post(&sync->D);  // Notificar que terminó su turno
 
-    usleep(10000);
+    usleep(1000);
   }
 
   return 0;

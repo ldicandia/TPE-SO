@@ -80,10 +80,8 @@ void print_board(GameState *state) {
   for (int y = 0; y < state->height; y++) {
     for (int x = 0; x < state->width; x++) {
       char elem = display_board[y][x];
-      if (elem == '0') {
+      if (elem <= '0' || elem > '9') {
         printf("\033[31m %c \033[0m", elem);
-      } else if (elem == '/') {
-        printf("\033[32m %c \033[0m", elem);  // harcodeado. corregir
       } else {
         printf(" %c ", elem);
       }
