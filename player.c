@@ -19,7 +19,7 @@ typedef struct {
   unsigned int valid_moves;
   unsigned short x, y;
   pid_t pid;
-  bool active;
+  bool blocked;
   char *color;
 } Player;
 

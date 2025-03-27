@@ -23,7 +23,7 @@ typedef struct {
   unsigned int valid_moves;
   unsigned short x, y;
   pid_t pid;
-  bool active;
+  bool blocked;
 } Player;
 
 typedef struct {
@@ -57,7 +57,7 @@ pid_t spawn_process(const char *path, char *width, char *height) {
 void initialize_board(GameState *state, unsigned int seed) {
   srand(seed);
   for (int i = 0; i < state->width * state->height; i++) {
-    state->board[i] = rand() % 10;  // Random rewards 0-4
+    state->board[i] = rand() % 9 + 1;  // Random rewards 0-4
   }
 }
 
@@ -90,7 +90,8 @@ void process_move(GameState *state, GameSync *sync, int player_idx,
     state->players[player_idx].x = new_x;
     state->players[player_idx].y = new_y;
     state->players[player_idx].valid_moves++;
-    state->board[new_y * state->width + new_x] = 0;  // Cell consumed
+    state->board[new_y * state->width + new_x] =
+        0 - player_idx;  // Cell consumed
   }
 
   sem_post(&sync->A);
@@ -105,7 +106,7 @@ void place_players(GameState *state) {
     state->players[i].score = 0;
     state->players[i].invalid_moves = 0;
     state->players[i].valid_moves = 0;
-    state->players[i].active = true;
+    state->players[i].blocked = false;
     snprintf(state->players[i].name, 16, "Player%d", i + 1);
   }
 }
@@ -129,21 +130,11 @@ void *create_shared_memory(const char *name, size_t size) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 3) {
-    exit(EXIT_FAILURE);
-  }
-
   int width = 10, height = 10, delay = 200, timeout = 10;
   unsigned int seed = time(NULL);
   char *view_path = NULL;
   char *player_paths[MAX_PLAYERS];
   int num_players = 0;
-
-  if (num_players < 1 || num_players > MAX_PLAYERS) {
-    fprintf(stderr, "Error: Number of players must be between 1 and %d\n",
-            MAX_PLAYERS);
-    exit(EXIT_FAILURE);
-  }
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-w") == 0)
@@ -166,6 +157,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (num_players < 1 || num_players > MAX_PLAYERS) {
+    fprintf(stderr, "Error: Number of players must be between 1 and %d\n",
+            MAX_PLAYERS);
+    exit(EXIT_FAILURE);
+  }
   // Crear memoria compartida para el estado del juego
   size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
   GameState *state = create_shared_memory(SHM_GAME_STATE, game_state_size);
@@ -225,7 +221,7 @@ int main(int argc, char *argv[]) {
   while (!state->game_over) {
     FD_ZERO(&readfds);
     for (int i = 0; i < num_players; i++) {
-      if (state->players[i].active) {
+      if (!state->players[i].blocked) {
         FD_SET(player_pipes[i][0], &readfds);
       }
     }
@@ -248,7 +244,7 @@ int main(int argc, char *argv[]) {
       if (FD_ISSET(player_pipes[i][0], &readfds)) {
         unsigned char move;
         if (read(player_pipes[i][0], &move, sizeof(move)) <= 0) {
-          state->players[i].active = false;
+          state->players[i].blocked = true;
         } else {
           process_move(state, sync, i, move);
           last_move = time(NULL);

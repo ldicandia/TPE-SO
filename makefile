@@ -42,4 +42,4 @@ clean:
 
 # Ejecutar ChompChamps
 run: all
-	./ChompChamps -w 30 -h 30 -t 5 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 500
+	./ChompChamps -w 10 -h 10 -t 5 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 500
