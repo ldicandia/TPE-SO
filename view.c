@@ -9,6 +9,17 @@
 #include <time.h>
 #include <unistd.h>
 
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+#define BLUE    "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN    "\033[36m"
+#define GRAY    "\x1b[90m" // Gris oscuro
+#define ORANGE  "\033[38;5;208m"
+
+const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
+
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
 
@@ -80,8 +91,8 @@ void print_board(GameState *state) {
   for (int y = 0; y < state->height; y++) {
     for (int x = 0; x < state->width; x++) {
       char elem = display_board[y][x];
-      if (elem <= '0' || elem > '9') {
-        printf("\033[31m %c \033[0m", elem);
+      if (elem <= '0') {
+        printf("%s %c \033[0m",colors['0' - elem], elem);
       } else {
         printf(" %c ", elem);
       }
