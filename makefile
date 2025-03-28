@@ -43,3 +43,8 @@ clean:
 # Ejecutar ChompChamps
 run: all
 	./ChompChamps -w 10 -h 10 -t 5 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 500
+
+
+# Ejecutar el programa con master nuestro
+#gcc master_chomp.c -o master_chomp
+#./master_chomp -w 10 -h 10 -t 5 -p ./bin/player ./bin/player ./bin/player ./bin/player ./bin/player -v ./bin/view -d 500

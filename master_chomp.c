@@ -61,20 +61,48 @@ void initialize_board(GameState *state, unsigned int seed) {
   }
 }
 
+bool all_players_blocked(GameState *state) {
+  for (int i = 0; i < state->num_players; i++) {
+    if (!state->players[i].blocked) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool is_valid_move(GameState *state, int player_idx, unsigned char move) {
   int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
   int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
-
-  int new_x = state->players[player_idx].x + dx[move];
-  int new_y = state->players[player_idx].y + dy[move];
-
+  int dir = move;  // Asumiendo que move es un índice de 0 a 7
+  int new_x = state->players[player_idx].x + dx[dir];
+  int new_y = state->players[player_idx].y + dy[dir];
   return (new_x >= 0 && new_x < state->width && new_y >= 0 &&
-          new_y < state->height);
+          new_y < state->height &&
+          state->board[new_y * state->width + new_x] > 0);
+}
+
+bool has_valid_moves(GameState *state, int player_idx) {
+  int dx[8] = {0, 1,  1,  1,
+               0, -1, -1, -1};  // Direcciones: N, NE, E, SE, S, SW, W, NW
+  int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+
+  for (int move = 0; move < 8; move++) {
+    int new_x = state->players[player_idx].x + dx[move];
+    int new_y = state->players[player_idx].y + dy[move];
+    if (new_x >= 0 && new_x < state->width && new_y >= 0 &&
+        new_y < state->height) {
+      if (state->board[new_y * state->width + new_x] > 0) {  // Celda con comida
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 void process_move(GameState *state, GameSync *sync, int player_idx,
                   unsigned char move) {
   sem_wait(&sync->C);
+  sem_wait(&sync->D);
 
   if (!is_valid_move(state, player_idx, move)) {
     state->players[player_idx].invalid_moves++;
@@ -94,9 +122,10 @@ void process_move(GameState *state, GameSync *sync, int player_idx,
         0 - player_idx;  // Cell consumed
   }
 
+  sem_post(&sync->D);
   sem_post(&sync->A);
   sem_wait(&sync->B);
-  sem_post(&sync->D);
+  sem_post(&sync->C);
 }
 
 void place_players(GameState *state) {
@@ -210,15 +239,45 @@ int main(int argc, char *argv[]) {
   }
 
   // Main game loop
+  // Agrega un arreglo para rastrear el tiempo del último movimiento válido de
+  // cada jugador
+  time_t *last_move_times = malloc(num_players * sizeof(time_t));
+  for (int i = 0; i < num_players; i++) {
+    last_move_times[i] = time(NULL);  // Inicializa con el tiempo actual
+  }
+
   fd_set readfds;
   struct timeval tv;
-  int max_fd = 0;
+  int max_fd = -1;  // Calcula el máximo FD de los pipes
   for (int i = 0; i < num_players; i++) {
     if (player_pipes[i][0] > max_fd) max_fd = player_pipes[i][0];
   }
 
-  time_t last_move = time(NULL);
   while (!state->game_over) {
+    // Verificar timeout por jugador
+    time_t current_time = time(NULL);
+    int active_players = 0;
+    for (int i = 0; i < num_players; i++) {
+      if (!state->players[i].blocked) {
+        if (current_time - last_move_times[i] >= timeout &&
+            !has_valid_moves(state, i)) {
+          state->players[i].blocked = true;
+          printf("Player %s blocked due to timeout or no valid moves.\n",
+                 state->players[i].name);
+          active_players--;
+        } else {
+          active_players++;
+        }
+      }
+    }
+
+    // Si no quedan jugadores activos, terminar el juego
+    if (active_players == 0) {
+      state->game_over = true;
+      break;
+    }
+
+    // Configurar select para leer de los pipes
     FD_ZERO(&readfds);
     for (int i = 0; i < num_players; i++) {
       if (!state->players[i].blocked) {
@@ -233,27 +292,35 @@ int main(int argc, char *argv[]) {
     if (ready == -1) {
       perror("select");
       break;
-    } else if (ready == 0) {
-      if (time(NULL) - last_move >= timeout) {
-        state->game_over = true;
-      }
-      continue;
     }
 
+    // Procesar movimientos
     for (int i = 0; i < num_players; i++) {
-      if (FD_ISSET(player_pipes[i][0], &readfds)) {
+      if (!state->players[i].blocked &&
+          FD_ISSET(player_pipes[i][0], &readfds)) {
         unsigned char move;
-        if (read(player_pipes[i][0], &move, sizeof(move)) <= 0) {
+        ssize_t bytes_read = read(player_pipes[i][0], &move, sizeof(move));
+        if (bytes_read <= 0) {
           state->players[i].blocked = true;
+          printf("Player %s blocked due to pipe error or EOF.\n",
+                 state->players[i].name);
         } else {
           process_move(state, sync, i, move);
-          last_move = time(NULL);
+          int new_x = state->players[i].x;
+          int new_y = state->players[i].y;
+          if (new_x >= 0 && new_x < state->width && new_y >= 0 &&
+              new_y < state->height &&
+              state->board[new_y * state->width + new_x] > 0) {
+            last_move_times[i] = time(NULL);
+          }
         }
       }
     }
 
     usleep(delay * 1000);
   }
+
+  free(last_move_times);
 
   // Cleanup
   for (int i = 0; i < num_players; i++) {
