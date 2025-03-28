@@ -6,19 +6,28 @@ CFLAGS = -Wall -Werror
 BIN_DIR = bin
 
 # Ejecutables
+MASTER = $(BIN_DIR)/master_chomp
 VIEW = $(BIN_DIR)/view
 PLAYER = $(BIN_DIR)/player
 
 # Archivos fuente
+MASTER_SRC = master_chomp.c
 VIEW_SRC = view.c
 PLAYER_SRC = player.c
 
 # Archivos objeto
+MASTER_OBJ = $(BIN_DIR)/master_chomp.o
 VIEW_OBJ = $(BIN_DIR)/view.o
 PLAYER_OBJ = $(BIN_DIR)/player.o
 
 # Regla por defecto: compilar todo
-all: $(VIEW) $(PLAYER)
+all: $(MASTER) $(VIEW) $(PLAYER)
+
+# Compilar master_chomp
+$(MASTER): $(MASTER_SRC)
+	mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $(MASTER) $(MASTER_SRC)
+
 
 # Compilar la vista
 $(VIEW): $(VIEW_OBJ)
@@ -42,7 +51,7 @@ clean:
 
 # Ejecutar ChompChamps
 run: all
-	./ChompChamps -w 10 -h 10 -t 5 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 500
+	./$(MASTER) -w 10 -h 10 -t 5 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 500
 
 
 # Ejecutar el programa con master nuestro
