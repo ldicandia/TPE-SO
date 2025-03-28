@@ -167,22 +167,51 @@ int main(int argc, char *argv[]) {
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-w") == 0)
+    if (i + 1 < argc) {
       width = atoi(argv[++i]);
+      if (width < 10) {
+        fprintf(stderr, "Error: minimum width must be 10.\n");
+        exit(EXIT_FAILURE);
+      }
+    }
     else if (strcmp(argv[i], "-h") == 0)
+    if (i + 1 < argc) {
       height = atoi(argv[++i]);
+      if (height < 10) {
+        fprintf(stderr, "Error: minimum height must be 10.\n");
+        exit(EXIT_FAILURE);
+      }
+    }
     else if (strcmp(argv[i], "-d") == 0)
+    if (i + 1 < argc) {
       delay = atoi(argv[++i]);
+      if (delay < 0) {
+        fprintf(stderr, "Error:  delay must be non-negative.\n");
+        exit(EXIT_FAILURE);
+      }
     else if (strcmp(argv[i], "-t") == 0)
+    if (i + 1 < argc) {
       timeout = atoi(argv[++i]);
+      if (timeout < 0) {
+        fprintf(stderr, "Error: Timeout must be non-negative.\n");
+        exit(EXIT_FAILURE);
+      }
+    }
     else if (strcmp(argv[i], "-s") == 0)
-      seed = atoi(argv[++i]);
+      if (i + 1 < argc) {
+        seed = atoi(argv[++i]);
+      }
     else if (strcmp(argv[i], "-v") == 0)
-      view_path = argv[++i];
+      if (i + 1 < argc) {
+        view_path = argv[++i];
+      }
     else if (strcmp(argv[i], "-p") == 0) {
       while (i + 1 < argc && num_players < MAX_PLAYERS &&
              argv[i + 1][0] != '-') {
         player_paths[num_players++] = argv[++i];
       }
+    } else {
+      fprintf(stderr, "Warning: unknown parameter %s was ignored.\n", argv[i]);
     }
   }
 
@@ -214,6 +243,10 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < num_players; i++) {
     if (pipe(player_pipes[i]) == -1) {
       perror("pipe");
+      for (int j = 0; j < i; j++) { // Cerrar pipes previos
+        close(player_pipes[j][0]);
+        close(player_pipes[j][1]);
+      }
       exit(EXIT_FAILURE);
     }
   }
