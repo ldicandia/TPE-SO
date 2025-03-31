@@ -67,7 +67,7 @@ void print_board(GameState *state) {
   printf("\n=== ChompChamps ===\n");
 
   // Mostrar información de los jugadores
-  printf("\nDEBUG: Estado de los jugadores\n");
+  printf("STATUS:\n");
 
   for (int i = 0; i < state->num_players; i++) {
     if (state->players[i].blocked) {
@@ -116,8 +116,7 @@ void check_players_blocked(GameState *state) {
   }
 
   if (all_blocked) {
-    printf("Todos los jugadores están bloqueados. Fin del juego.\n");
-    exit(1);
+    state->game_over = true;
   }
 }
 
@@ -133,6 +132,9 @@ int main(int argc, char *argv[]) {
                                         PROT_READ | PROT_WRITE);
 
   while (1) {
+    if (state->game_over) {
+      break;
+    }
     sem_wait(&sync->B);
     // Verificar si todos los jugadores están bloqueados
     check_players_blocked(state);
@@ -140,7 +142,7 @@ int main(int argc, char *argv[]) {
     sem_post(&sync->A);
   }
 
+  printf("Todos los jugadores están bloqueados. Fin del juego.\n");
   printf("Game Over!\n");
-  exit(1);
   return 0;
 }

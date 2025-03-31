@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <semaphore.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -167,54 +168,54 @@ int main(int argc, char *argv[]) {
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-w") == 0) {
-        if (i + 1 < argc) {
-            width = atoi(argv[++i]);
-            if (width < 10) {
-                fprintf(stderr, "Error: minimum width must be 10.\n");
-                exit(EXIT_FAILURE);
-            }
+      if (i + 1 < argc) {
+        width = atoi(argv[++i]);
+        if (width < 10) {
+          fprintf(stderr, "Error: minimum width must be 10.\n");
+          exit(EXIT_FAILURE);
         }
+      }
     } else if (strcmp(argv[i], "-h") == 0) {
-        if (i + 1 < argc) {
-            height = atoi(argv[++i]);
-            if (height < 10) {
-                fprintf(stderr, "Error: minimum height must be 10.\n");
-                exit(EXIT_FAILURE);
-            }
+      if (i + 1 < argc) {
+        height = atoi(argv[++i]);
+        if (height < 10) {
+          fprintf(stderr, "Error: minimum height must be 10.\n");
+          exit(EXIT_FAILURE);
         }
+      }
     } else if (strcmp(argv[i], "-d") == 0) {
-        if (i + 1 < argc) {
-            delay = atoi(argv[++i]);
-            if (delay < 0) {
-                fprintf(stderr, "Error: delay must be non-negative.\n");
-                exit(EXIT_FAILURE);
-            }
+      if (i + 1 < argc) {
+        delay = atoi(argv[++i]);
+        if (delay < 0) {
+          fprintf(stderr, "Error: delay must be non-negative.\n");
+          exit(EXIT_FAILURE);
         }
+      }
     } else if (strcmp(argv[i], "-t") == 0) {
-        if (i + 1 < argc) {
-            timeout = atoi(argv[++i]);
-            if (timeout < 0) {
-                fprintf(stderr, "Error: Timeout must be non-negative.\n");
-                exit(EXIT_FAILURE);
-            }
+      if (i + 1 < argc) {
+        timeout = atoi(argv[++i]);
+        if (timeout < 0) {
+          fprintf(stderr, "Error: Timeout must be non-negative.\n");
+          exit(EXIT_FAILURE);
         }
+      }
     } else if (strcmp(argv[i], "-s") == 0) {
-        if (i + 1 < argc) {
-            seed = atoi(argv[++i]);
-        }
+      if (i + 1 < argc) {
+        seed = atoi(argv[++i]);
+      }
     } else if (strcmp(argv[i], "-v") == 0) {
-        if (i + 1 < argc) {
-            view_path = argv[++i];
-        }
+      if (i + 1 < argc) {
+        view_path = argv[++i];
+      }
     } else if (strcmp(argv[i], "-p") == 0) {
-        while (i + 1 < argc && num_players < MAX_PLAYERS &&
-               argv[i + 1][0] != '-') {
-            player_paths[num_players++] = argv[++i];
-        }
+      while (i + 1 < argc && num_players < MAX_PLAYERS &&
+             argv[i + 1][0] != '-') {
+        player_paths[num_players++] = argv[++i];
+      }
     } else {
-        fprintf(stderr, "Warning: unknown parameter %s was ignored.\n", argv[i]);
+      fprintf(stderr, "Warning: unknown parameter %s was ignored.\n", argv[i]);
     }
-}
+  }
 
   if (num_players < 1 || num_players > MAX_PLAYERS) {
     fprintf(stderr, "Error: Number of players must be between 1 and %d\n",
@@ -244,7 +245,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < num_players; i++) {
     if (pipe(player_pipes[i]) == -1) {
       perror("pipe");
-      for (int j = 0; j < i; j++) { // Cerrar pipes previos
+      for (int j = 0; j < i; j++) {  // Cerrar pipes previos
         close(player_pipes[j][0]);
         close(player_pipes[j][1]);
       }
@@ -287,28 +288,33 @@ int main(int argc, char *argv[]) {
     if (player_pipes[i][0] > max_fd) max_fd = player_pipes[i][0];
   }
 
+  int blocked_players = 0;
   while (!state->game_over) {
     // Verificar timeout por jugador
     time_t current_time = time(NULL);
-    int active_players = 0;
     for (int i = 0; i < num_players; i++) {
       if (!state->players[i].blocked) {
-        if (current_time - last_move_times[i] >= timeout &&
+        if (current_time - last_move_times[i] >= timeout ||
             !has_valid_moves(state, i)) {
           state->players[i].blocked = true;
           printf("Player %s blocked due to timeout or no valid moves.\n",
                  state->players[i].name);
-         // active_players--;
-        } else {
-          active_players++;
+          blocked_players++;
         }
       }
     }
 
-    // Si no quedan jugadores activos, terminar el juego
-    if (active_players == 0) {
+    // Verificar si todos los jugadores están bloqueados
+    if (blocked_players == num_players) {
+      printf("All players are blocked. Ending game.\n");
       state->game_over = true;
-      break;
+
+      // Asegurarse de que el estado de todos los jugadores esté actualizado
+      for (int i = 0; i < num_players; i++) {
+        if (!state->players[i].blocked) {
+          state->players[i].blocked = true;
+        }
+      }
     }
 
     // Configurar select para leer de los pipes
@@ -338,6 +344,7 @@ int main(int argc, char *argv[]) {
           state->players[i].blocked = true;
           printf("Player %s blocked due to pipe error or EOF.\n",
                  state->players[i].name);
+          blocked_players++;
         } else {
           process_move(state, sync, i, move);
           int new_x = state->players[i].x;
@@ -355,6 +362,15 @@ int main(int argc, char *argv[]) {
   }
 
   free(last_move_times);
+
+  // kill processes de jugadores y vista
+  for (int i = 0; i < num_players; i++) {
+    kill(player_pids[i], SIGKILL);
+    close(player_pipes[i][0]);
+  }
+  if (view_pid) {
+    kill(view_pid, SIGKILL);
+  }
 
   // Cleanup
   for (int i = 0; i < num_players; i++) {
