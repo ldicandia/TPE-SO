@@ -126,20 +126,20 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState),
+  int width = atoi(argv[1]);
+  int height = atoi(argv[2]);
+
+  size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
+
+  GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size,
                                           O_RDONLY, PROT_READ);
   GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR,
                                         PROT_READ | PROT_WRITE);
 
-  while (1) {
-    if (state->game_over) {
-      break;
-    }
-    sem_wait(&sync->B);
-    // Verificar si todos los jugadores están bloqueados
-    check_players_blocked(state);
+  while (!state->game_over) {
+    sem_wait(&sync->A);
     print_board(state);
-    sem_post(&sync->A);
+    sem_post(&sync->B);
   }
 
   printf("Todos los jugadores están bloqueados. Fin del juego.\n");

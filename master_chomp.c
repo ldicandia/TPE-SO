@@ -294,11 +294,11 @@ int main(int argc, char *argv[]) {
     time_t current_time = time(NULL);
     for (int i = 0; i < num_players; i++) {
       if (!state->players[i].blocked) {
-        if (current_time - last_move_times[i] >= timeout ||
-            !has_valid_moves(state, i)) {
+        if (!has_valid_moves(state, i) ||
+            current_time - last_move_times[i] >= timeout) {
           state->players[i].blocked = true;
-          printf("Player %s blocked due to timeout or no valid moves.\n",
-                 state->players[i].name);
+          // printf("Player %s blocked due to timeout or no valid moves.\n",
+          // state->players[i].name);
           blocked_players++;
         }
       }
@@ -306,15 +306,18 @@ int main(int argc, char *argv[]) {
 
     // Verificar si todos los jugadores están bloqueados
     if (blocked_players == num_players) {
-      printf("All players are blocked. Ending game.\n");
+      // printf("All players are blocked. Ending game.\n");
       state->game_over = true;
 
       // Asegurarse de que el estado de todos los jugadores esté actualizado
+
       for (int i = 0; i < num_players; i++) {
         if (!state->players[i].blocked) {
           state->players[i].blocked = true;
         }
       }
+      sem_post(&sync->A);
+      sem_wait(&sync->B);
     }
 
     // Configurar select para leer de los pipes
@@ -357,7 +360,6 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-
     usleep(delay * 1000);
   }
 
@@ -369,7 +371,7 @@ int main(int argc, char *argv[]) {
     close(player_pipes[i][0]);
   }
   if (view_pid) {
-    kill(view_pid, SIGKILL);
+    kill(view_pid, SIGTERM);
   }
 
   // Cleanup
