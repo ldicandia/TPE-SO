@@ -381,9 +381,13 @@ int main(int argc, char *argv[]) {
 
   free(last_move_times);
 
+  // Kill processes de jugadores y vista
   for (int i = 0; i < num_players; i++) {
     kill(player_pids[i], SIGKILL);
     close(player_pipes[i][0]);
+  }
+  if (view_pid) {
+    kill(view_pid, SIGTERM);
   }
 
   // Cleanup

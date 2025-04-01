@@ -51,7 +51,7 @@ clean:
 
 # Ejecutar ChompChamps
 run: all
-	./$(MASTER) -w 10 -h 10 -t 2 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 10
+	./$(MASTER) -w 10 -h 10 -t 0 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 10
 
 
 # Ejecutar el programa con master nuestro
