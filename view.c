@@ -15,7 +15,7 @@
 #define BLUE "\033[34m"
 #define MAGENTA "\033[35m"
 #define CYAN "\033[36m"
-#define GRAY "\x1b[90m"  // Gris oscuro
+#define GRAY "\x1b[90m" // Gris oscuro
 #define ORANGE "\033[38;5;208m"
 
 const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
@@ -48,13 +48,13 @@ typedef struct {
 } GameSync;
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
-  int fd = shm_open(name, flags, 0666);  // Cambiar a O_RDONLY
+  int fd = shm_open(name, flags, 0666); // Cambiar a O_RDONLY
   if (fd == -1) {
     perror("shm_open");
     exit(EXIT_FAILURE);
   }
   void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd,
-                   0);  // Cambiar a PROT_READ
+                   0); // Cambiar a PROT_READ
   if (ptr == MAP_FAILED) {
     perror("mmap");
     exit(EXIT_FAILURE);
@@ -73,9 +73,7 @@ void print_board(GameState *state) {
     if (state->players[i].blocked) {
       printf("Jugador %s está bloqueado.\n", state->players[i].name);
     } else {
-      printf("Jugador %s - Pos: (%d, %d), Score: %d, Bloqueado: %d\n",
-             state->players[i].name, state->players[i].x, state->players[i].y,
-             state->players[i].score, state->players[i].blocked);
+      printf("Jugador %s - Pos: (%d, %d), Score: %d, Bloqueado: %d\n", state->players[i].name, state->players[i].x, state->players[i].y, state->players[i].score, state->players[i].blocked);
     }
   }
 
@@ -131,10 +129,8 @@ int main(int argc, char *argv[]) {
 
   size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
 
-  GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size,
-                                          O_RDONLY, PROT_READ);
-  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR,
-                                        PROT_READ | PROT_WRITE);
+  GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size, O_RDONLY, PROT_READ);
+  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
     sem_wait(&sync->A);
