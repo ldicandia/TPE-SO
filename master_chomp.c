@@ -154,6 +154,7 @@ void *create_shared_memory(const char *name, size_t size) {
 }
 
 int main(int argc, char *argv[]) {
+
   int width = 10, height = 10, delay = 200, timeout = 10;
   unsigned int seed = time(NULL);
   char *view_path = NULL;
@@ -198,6 +199,7 @@ int main(int argc, char *argv[]) {
       view_path = optarg;
       break;
     case 'p':
+      optind--;
       while (optind < argc && num_players < MAX_PLAYERS && argv[optind][0] != '-') {
         player_paths[num_players++] = argv[optind++];
       }
@@ -373,9 +375,9 @@ int main(int argc, char *argv[]) {
     kill(player_pids[i], SIGKILL);
     close(player_pipes[i][0]);
   }
-  if (view_pid) {
-    kill(view_pid, SIGTERM);
-  }
+  // if (view_pid) {
+  //   kill(view_pid, SIGTERM);
+  // }
 
   //--------------------------------------------CAMBIAR ESTO----------//
 

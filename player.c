@@ -45,8 +45,7 @@ void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
     perror("shm_open");
     exit(EXIT_FAILURE);
   }
-  void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd,
-                   0); // Cambiar a PROT_READ
+  void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd, 0); // Cambiar a PROT_READ
   if (ptr == MAP_FAILED) {
     perror("mmap");
     exit(EXIT_FAILURE);
