@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <getopt.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -166,55 +167,69 @@ int main(int argc, char *argv[]) {
   char *player_paths[MAX_PLAYERS];
   int num_players = 0;
 
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-w") == 0) {
-      if (i + 1 < argc) {
-        width = atoi(argv[++i]);
+  int opt;
+  while ((opt = getopt(argc, argv, "w:h:d:t:s:v:p:")) != -1) {
+    switch (opt) {
+      case 'w':
+        width = atoi(optarg);
         if (width < 10) {
           fprintf(stderr, "Error: minimum width must be 10.\n");
           exit(EXIT_FAILURE);
         }
-      }
-    } else if (strcmp(argv[i], "-h") == 0) {
-      if (i + 1 < argc) {
-        height = atoi(argv[++i]);
+        break;
+      case 'h':
+        height = atoi(optarg);
         if (height < 10) {
           fprintf(stderr, "Error: minimum height must be 10.\n");
           exit(EXIT_FAILURE);
         }
-      }
-    } else if (strcmp(argv[i], "-d") == 0) {
-      if (i + 1 < argc) {
-        delay = atoi(argv[++i]);
+        break;
+      case 'd':
+        delay = atoi(optarg);
         if (delay < 0) {
           fprintf(stderr, "Error: delay must be non-negative.\n");
           exit(EXIT_FAILURE);
         }
-      }
-    } else if (strcmp(argv[i], "-t") == 0) {
-      if (i + 1 < argc) {
-        timeout = atoi(argv[++i]);
+        break;
+      case 't':
+        timeout = atoi(optarg);
         if (timeout < 0) {
-          fprintf(stderr, "Error: Timeout must be non-negative.\n");
+          fprintf(stderr, "Error: timeout must be non-negative.\n");
           exit(EXIT_FAILURE);
         }
-      }
-    } else if (strcmp(argv[i], "-s") == 0) {
-      if (i + 1 < argc) {
-        seed = atoi(argv[++i]);
-      }
-    } else if (strcmp(argv[i], "-v") == 0) {
-      if (i + 1 < argc) {
-        view_path = argv[++i];
-      }
-    } else if (strcmp(argv[i], "-p") == 0) {
-      while (i + 1 < argc && num_players < MAX_PLAYERS &&
-             argv[i + 1][0] != '-') {
-        player_paths[num_players++] = argv[++i];
-      }
-    } else {
-      fprintf(stderr, "Warning: unknown parameter %s was ignored.\n", argv[i]);
+        break;
+      case 's':
+        seed = atoi(optarg);
+        break;
+      case 'v':
+        view_path = optarg;
+        break;
+      case 'p':
+        while (optind < argc && num_players < MAX_PLAYERS &&
+               argv[optind][0] != '-') {
+          player_paths[num_players++] = argv[optind++];
+        }
+        break;
+      default:
+        fprintf(stderr,
+                "Usage: %s [-w width] [-h height] [-d delay] [-t timeout] [-s "
+                "seed] [-v view_path] [-p player_paths...]\n",
+                argv[0]);
+        exit(EXIT_FAILURE);
     }
+  }
+
+  // print parameters
+  printf("Parameters:\n");
+  printf("Width: %d\n", width);
+  printf("Height: %d\n", height);
+  printf("Delay: %d ms\n", delay);
+  printf("Timeout: %d s\n", timeout);
+  printf("Seed: %u\n", seed);
+  printf("View path: %s\n", view_path ? view_path : "None");
+  printf("Player paths:\n");
+  for (int i = 0; i < num_players; i++) {
+    printf("  %s\n", player_paths[i]);
   }
 
   if (num_players < 1 || num_players > MAX_PLAYERS) {
@@ -293,6 +308,8 @@ int main(int argc, char *argv[]) {
     // Verificar timeout por jugador
     time_t current_time = time(NULL);
     sem_wait(&sync->D);
+    sem_wait(&sync->E);
+
     for (int i = 0; i < num_players; i++) {
       if (!state->players[i].blocked) {
         if (!has_valid_moves(state, i)) {
@@ -307,6 +324,7 @@ int main(int argc, char *argv[]) {
       }
     }
     sem_post(&sync->D);
+    sem_post(&sync->E);
 
     // Verificar si todos los jugadores están bloqueados
     if (blocked_players == num_players) {
@@ -363,13 +381,9 @@ int main(int argc, char *argv[]) {
 
   free(last_move_times);
 
-  // Kill processes de jugadores y vista
   for (int i = 0; i < num_players; i++) {
     kill(player_pids[i], SIGKILL);
     close(player_pipes[i][0]);
-  }
-  if (view_pid) {
-    kill(view_pid, SIGTERM);
   }
 
   // Cleanup

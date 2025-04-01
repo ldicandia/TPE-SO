@@ -33,8 +33,10 @@ typedef struct {
 } GameState;
 
 typedef struct {
-  sem_t sem_view_ready;
+  sem_t C;
   sem_t D;
+  sem_t E;  // Mutex para la siguiente variable
+  int F;    // Cantidad de jugadores leyendo el estado
 } GameSync;
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
@@ -66,8 +68,6 @@ int main(int argc, char *argv[]) {
                                         PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
-    // sem_wait(&sync->sem_view_ready);
-    //   sem_wait(&sync->B);  // Esperar turno
     usleep(100000);
     unsigned char move = choose_random_move();
 
@@ -78,6 +78,5 @@ int main(int argc, char *argv[]) {
 
     usleep(100000);
   }
-
   return 0;
 }
