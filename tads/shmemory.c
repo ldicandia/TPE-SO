@@ -44,3 +44,24 @@ void destroy_sync(sem_t *A, sem_t *B, sem_t *C, sem_t *D, sem_t *E) {
   sem_destroy(D);
   sem_destroy(E);
 }
+
+void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
+  int fd = shm_open(name, flags, 0666); // Cambiar a O_RDONLY
+  if (fd == -1) {
+    perror("shm_open");
+    exit(EXIT_FAILURE);
+  }
+  void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd, 0); // Cambiar a PROT_READ
+  if (ptr == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+  return ptr;
+}
+
+void detach_shared_memory(void *ptr, size_t size) {
+  if (munmap(ptr, size) == -1) {
+    perror("munmap");
+    exit(EXIT_FAILURE);
+  }
+}

@@ -25,21 +25,6 @@ const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
 
-void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
-  int fd = shm_open(name, flags, 0666); // Cambiar a O_RDONLY
-  if (fd == -1) {
-    perror("shm_open");
-    exit(EXIT_FAILURE);
-  }
-  void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd,
-                   0); // Cambiar a PROT_READ
-  if (ptr == MAP_FAILED) {
-    perror("mmap");
-    exit(EXIT_FAILURE);
-  }
-  return ptr;
-}
-
 void print_board(GameState *state);
 void check_players_blocked(GameState *state);
 

@@ -20,4 +20,7 @@ void initialize_sync(sem_t *A, sem_t *B, sem_t *C, sem_t *D, sem_t *E, unsigned 
 void destroy_sync(sem_t *A, sem_t *B, sem_t *C, sem_t *D, sem_t *E);
 void detach_shared_memory(void *ptr, size_t size);
 
+void *attach_shared_memory(const char *name, size_t size, int flags, int prot);
+void detach_shared_memory(void *ptr, size_t size);
+
 #endif // SHMEMORY_H
