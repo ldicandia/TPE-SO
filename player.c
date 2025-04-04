@@ -53,6 +53,13 @@ void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
   return ptr;
 }
 
+void detach_shared_memory(void *ptr, size_t size) {
+  if (munmap(ptr, size) == -1) {
+    perror("munmap");
+    exit(EXIT_FAILURE);
+  }
+}
+
 unsigned char choose_random_move() { return rand() % 8; }
 
 int main(int argc, char *argv[]) {
@@ -68,6 +75,10 @@ int main(int argc, char *argv[]) {
     usleep(100000);
     unsigned char move = choose_random_move();
 
+    // if (state->players[getpid() % state->num_players].blocked) {
+    //   return 0; // Salir del bucle si el jugador está bloqueado
+    // }
+
     write(STDOUT_FILENO, &move,
           sizeof(move)); // El ChompChamps leerá esto por pipe
 
@@ -75,5 +86,7 @@ int main(int argc, char *argv[]) {
 
     usleep(100000);
   }
+  detach_shared_memory(state, sizeof(GameState));
+  detach_shared_memory(sync, sizeof(GameSync));
   return 0;
 }

@@ -320,8 +320,10 @@ int main(int argc, char *argv[]) {
     // Verificar si todos los jugadores están bloqueados
     if (blocked_players == num_players) {
       state->game_over = true;
-      sem_post(&sync->A);
-      sem_wait(&sync->B);
+      if (view_pid) { // Only use semaphores if the view process exists
+        sem_post(&sync->A);
+        sem_wait(&sync->B);
+      }
     }
 
     // Configurar select para leer de los pipes
@@ -360,8 +362,10 @@ int main(int argc, char *argv[]) {
             process_move(state, i, move);
 
             sem_post(&sync->D);
-            sem_post(&sync->A);
-            sem_wait(&sync->B);
+            if (view_pid) { // Only use semaphores if the view process exists
+              sem_post(&sync->A);
+              sem_wait(&sync->B);
+            }
             sem_post(&sync->C);
 
             // Update the last move time if the move was valid
@@ -384,18 +388,16 @@ int main(int argc, char *argv[]) {
     kill(player_pids[i], SIGKILL);
     close(player_pipes[i][0]);
   }
-  // if (view_pid) {
-  //   kill(view_pid, SIGTERM);
-  // }
-
-  //--------------------------------------------CAMBIAR ESTO----------//
 
   // Cleanup
+  /* DEBUG
   for (int i = 0; i < num_players; i++) {
     int status;
     waitpid(player_pids[i], &status, 0);
     printf("Player %s (PID %d) exited with status %d, score: %u\n", state->players[i].name, player_pids[i], status, state->players[i].score);
   }
+  */
+
   if (view_pid) {
     int status;
     waitpid(view_pid, &status, 0);
@@ -407,7 +409,8 @@ int main(int argc, char *argv[]) {
   sem_destroy(&sync->C);
   sem_destroy(&sync->D);
   sem_destroy(&sync->E);
-
+  munmap(state, game_state_size);
+  munmap(sync, sizeof(GameSync));
   shm_unlink(SHM_GAME_STATE);
   shm_unlink(SHM_GAME_SYNC);
 
