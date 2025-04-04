@@ -189,6 +189,21 @@ int main(int argc, char *argv[]) {
     close(player_pipes[i][0]);
   }
 
+  // CHECK RESULTS
+  for (int i = 0; i < num_players; i++) {
+    int status;
+    waitpid(player_pids[i], &status, 0);
+    if (WIFEXITED(status)) {
+      printf("Player %d || Exit status %d || Score = %d\n", i + 1, WEXITSTATUS(status), state->players[i].score);
+    } else if (WIFSIGNALED(status)) {
+      printf("Player %d || Killed by signal %d\n", i + 1, WTERMSIG(status));
+    } else if (WIFSTOPPED(status)) {
+      printf("Player %d || Stopped by signal %d\n", i + 1, WSTOPSIG(status));
+    } else {
+      printf("Player %d || Unknown status\n", i);
+    }
+  }
+
   if (view_pid) {
     int status;
     waitpid(view_pid, &status, 0);
