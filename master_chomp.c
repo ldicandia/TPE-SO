@@ -300,8 +300,10 @@ int main(int argc, char *argv[]) {
   while (!state->game_over) {
     // Verificar timeout por jugador
     time_t current_time = time(NULL);
-    sem_wait(&sync->D);
-    sem_wait(&sync->E);
+    if (sync->F++ == 0) {
+      sem_wait(&sync->D); // Bloquea el acceso al estado del juego si es el primer lector
+    }
+    sem_post(&sync->E);
 
     for (int i = 0; i < num_players; i++) {
       if (!state->players[i].blocked) {
@@ -316,7 +318,11 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    sem_post(&sync->D);
+    // Desbloqueo para lectores (decrementar contador de lectores)
+    sem_wait(&sync->E);
+    if (--sync->F == 0) {
+      sem_post(&sync->D); // Libera el acceso al estado del juego si es el último lector
+    }
     sem_post(&sync->E);
 
     // Verificar si todos los jugadores están bloqueados
