@@ -106,8 +106,8 @@ int main(int argc, char *argv[]) {
 
   // Create shared memory for game state and synchronization
   size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
-  GameState *state = create_shared_memory(SHM_GAME_STATE, game_state_size, O_RDWR, PROT_READ | PROT_WRITE);
-  GameSync *sync = create_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
+  GameState *state = create_shared_memory(SHM_GAME_STATE, game_state_size);
+  GameSync *sync = create_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
 
   initialize_sync(&sync->A, &sync->B, &sync->C, &sync->D, &sync->E, &sync->F);
 

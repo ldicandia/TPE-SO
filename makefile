@@ -42,7 +42,7 @@ $(VIEW): $(VIEW_OBJ)
 # Compilar el jugador
 $(PLAYER): $(PLAYER_OBJ)
 	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $(PLAYER) $(PLAYER_OBJ)
+	$(CC) $(CFLAGS) -o $(PLAYER) $(PLAYER_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ)
 
 # Regla genérica para compilar archivos .c en .o
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c | $(BIN_DIR)

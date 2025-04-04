@@ -1,3 +1,5 @@
+#include "tads/game_logic.h"
+#include "tads/shmemory.h"
 #include <fcntl.h>
 #include <semaphore.h>
 #include <stdbool.h>
@@ -11,33 +13,6 @@
 
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
-
-typedef struct {
-  char name[16];
-  unsigned int score;
-  unsigned int invalid_moves;
-  unsigned int valid_moves;
-  unsigned short x, y;
-  pid_t pid;
-  bool blocked;
-  char *color;
-} Player;
-
-typedef struct {
-  unsigned short width;
-  unsigned short height;
-  unsigned int num_players;
-  Player players[9];
-  bool game_over;
-  int board[];
-} GameState;
-
-typedef struct {
-  sem_t C;
-  sem_t D;
-  sem_t E; // Mutex para la siguiente variable
-  int F;   // Cantidad de jugadores leyendo el estado
-} GameSync;
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
   int fd = shm_open(name, flags, 0666); // Cambiar a O_RDONLY
