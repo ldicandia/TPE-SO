@@ -34,5 +34,6 @@ void place_players(GameState *state);
 bool is_valid_move(GameState *state, int player_idx, unsigned char move);
 bool has_valid_moves(GameState *state, int player_idx);
 void destroy_game_state(GameState *state);
+void process_move(GameState *state, int player_idx, unsigned char move);
 
 #endif

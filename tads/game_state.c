@@ -37,6 +37,24 @@ void place_players(GameState *state) {
   }
 }
 
+void process_move(GameState *state, int player_idx, unsigned char move) {
+  if (!is_valid_move(state, player_idx, move)) {
+    state->players[player_idx].invalid_moves++;
+  } else {
+    int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+    int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+
+    int new_x = state->players[player_idx].x + dx[move];
+    int new_y = state->players[player_idx].y + dy[move];
+
+    state->players[player_idx].score += state->board[new_y * state->width + new_x];
+    state->players[player_idx].x = new_x;
+    state->players[player_idx].y = new_y;
+    state->players[player_idx].valid_moves++;
+    state->board[new_y * state->width + new_x] = 0 - player_idx; // Cell consumed
+  }
+}
+
 bool is_valid_move(GameState *state, int player_idx, unsigned char move) {
   int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
   int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
