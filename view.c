@@ -1,3 +1,5 @@
+#include "tads/game_logic.h"
+#include "tads/shmemory.h"
 #include <fcntl.h>
 #include <semaphore.h>
 #include <stdbool.h>
@@ -23,30 +25,6 @@ const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
 
-typedef struct {
-  char name[16];
-  unsigned int score;
-  unsigned int invalid_moves;
-  unsigned int valid_moves;
-  unsigned short x, y;
-  pid_t pid;
-  bool blocked;
-} Player;
-
-typedef struct {
-  unsigned short width;
-  unsigned short height;
-  unsigned int num_players;
-  Player players[9];
-  bool game_over;
-  int board[];
-} GameState;
-
-typedef struct {
-  sem_t A;
-  sem_t B;
-} GameSync;
-
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
   int fd = shm_open(name, flags, 0666); // Cambiar a O_RDONLY
   if (fd == -1) {
@@ -60,6 +38,34 @@ void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
     exit(EXIT_FAILURE);
   }
   return ptr;
+}
+
+void print_board(GameState *state);
+void check_players_blocked(GameState *state);
+
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
+    exit(EXIT_FAILURE);
+  }
+
+  int width = atoi(argv[1]);
+  int height = atoi(argv[2]);
+
+  size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
+
+  GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size, O_RDONLY, PROT_READ);
+  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
+
+  while (!state->game_over) {
+    sem_wait(&sync->A);
+    print_board(state);
+    sem_post(&sync->B);
+  }
+
+  printf("Todos los jugadores están bloqueados. Fin del juego.\n");
+  printf("Game Over!\n");
+  return 0;
 }
 
 void print_board(GameState *state) {
@@ -116,29 +122,4 @@ void check_players_blocked(GameState *state) {
   if (all_blocked) {
     state->game_over = true;
   }
-}
-
-int main(int argc, char *argv[]) {
-  if (argc != 3) {
-    fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
-    exit(EXIT_FAILURE);
-  }
-
-  int width = atoi(argv[1]);
-  int height = atoi(argv[2]);
-
-  size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
-
-  GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size, O_RDONLY, PROT_READ);
-  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
-
-  while (!state->game_over) {
-    sem_wait(&sync->A);
-    print_board(state);
-    sem_post(&sync->B);
-  }
-
-  printf("Todos los jugadores están bloqueados. Fin del juego.\n");
-  printf("Game Over!\n");
-  return 0;
 }

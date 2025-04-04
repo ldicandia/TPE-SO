@@ -35,7 +35,7 @@ void detach_shared_memory(void *ptr, size_t size) {
   }
 }
 
-unsigned char choose_random_move() { return rand() % 8; }
+unsigned char choose_random_move();
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
@@ -65,3 +65,5 @@ int main(int argc, char *argv[]) {
   detach_shared_memory(sync, sizeof(GameSync));
   return 0;
 }
+
+unsigned char choose_random_move() { return rand() % 8; }
