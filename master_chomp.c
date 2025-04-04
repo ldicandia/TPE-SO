@@ -185,7 +185,6 @@ int main(int argc, char *argv[]) {
 
   // Cleanup
   for (int i = 0; i < num_players; i++) {
-    kill(player_pids[i], SIGKILL);
     close(player_pipes[i][0]);
   }
 
