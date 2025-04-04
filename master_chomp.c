@@ -97,10 +97,7 @@ bool has_valid_moves(GameState *state, int player_idx) {
   return false;
 }
 
-void process_move(GameState *state, GameSync *sync, int player_idx, unsigned char move) {
-  sem_wait(&sync->C);
-  sem_wait(&sync->D);
-
+void process_move(GameState *state, int player_idx, unsigned char move) {
   if (!is_valid_move(state, player_idx, move)) {
     state->players[player_idx].invalid_moves++;
   } else {
@@ -116,11 +113,6 @@ void process_move(GameState *state, GameSync *sync, int player_idx, unsigned cha
     state->players[player_idx].valid_moves++;
     state->board[new_y * state->width + new_x] = 0 - player_idx; // Cell consumed
   }
-
-  sem_post(&sync->D);
-  sem_post(&sync->A);
-  sem_wait(&sync->B);
-  sem_post(&sync->C);
 }
 
 void place_players(GameState *state) {
@@ -351,7 +343,7 @@ int main(int argc, char *argv[]) {
       break;
     }
     if (any_active) {
-      // Procesar movimientos
+      // Process moves
       for (int i = 0; i < num_players; i++) {
         if (!state->players[i].blocked && FD_ISSET(player_pipes[i][0], &readfds)) {
           unsigned char move;
@@ -361,7 +353,18 @@ int main(int argc, char *argv[]) {
             printf("Player %s blocked due to pipe error or EOF.\n", state->players[i].name);
             blocked_players++;
           } else {
-            process_move(state, sync, i, move);
+            // Synchronize access to the game state
+            sem_wait(&sync->C);
+            sem_wait(&sync->D);
+
+            process_move(state, i, move);
+
+            sem_post(&sync->D);
+            sem_post(&sync->A);
+            sem_wait(&sync->B);
+            sem_post(&sync->C);
+
+            // Update the last move time if the move was valid
             int new_x = state->players[i].x;
             int new_y = state->players[i].y;
             if (new_x >= 0 && new_x < state->width && new_y >= 0 && new_y < state->height && state->board[new_y * state->width + new_x] > 0) {
