@@ -1,9 +1,11 @@
 # Compilador y opciones
 CC = gcc
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -I./tads
 
 # Directorios
 BIN_DIR = bin
+SRC_DIR = .
+TADS_DIR = tads
 
 # Ejecutables
 MASTER = $(BIN_DIR)/master_chomp
@@ -11,34 +13,42 @@ VIEW = $(BIN_DIR)/view
 PLAYER = $(BIN_DIR)/player
 
 # Archivos fuente
-MASTER_SRC = master_chomp.c
-VIEW_SRC = view.c
-PLAYER_SRC = player.c
+MASTER_SRC = $(SRC_DIR)/master_chomp.c
+VIEW_SRC = $(SRC_DIR)/view.c
+PLAYER_SRC = $(SRC_DIR)/player.c
+SHMEMORY_SRC = $(TADS_DIR)/shmemory.c
+GAME_LOGIC_SRC = $(TADS_DIR)/game_logic.c
 
 # Archivos objeto
 MASTER_OBJ = $(BIN_DIR)/master_chomp.o
 VIEW_OBJ = $(BIN_DIR)/view.o
 PLAYER_OBJ = $(BIN_DIR)/player.o
+SHMEMORY_OBJ = $(BIN_DIR)/shmemory.o
+GAME_LOGIC_OBJ = $(BIN_DIR)/game_logic.o
 
 # Regla por defecto: compilar todo
 all: $(MASTER) $(VIEW) $(PLAYER)
 
 # Compilar master_chomp
-$(MASTER): $(MASTER_SRC)
+$(MASTER): $(MASTER_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ)
 	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $(MASTER) $(MASTER_SRC)
-
+	$(CC) $(CFLAGS) -o $(MASTER) $(MASTER_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ)
 
 # Compilar la vista
 $(VIEW): $(VIEW_OBJ)
+	mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $(VIEW) $(VIEW_OBJ)
 
 # Compilar el jugador
 $(PLAYER): $(PLAYER_OBJ)
+	mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $(PLAYER) $(PLAYER_OBJ)
 
 # Regla genérica para compilar archivos .c en .o
-$(BIN_DIR)/%.o: %.c | $(BIN_DIR)
+$(BIN_DIR)/%.o: $(SRC_DIR)/%.c | $(BIN_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BIN_DIR)/%.o: $(TADS_DIR)/%.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Crear el directorio bin si no existe
@@ -51,7 +61,7 @@ clean:
 
 # Ejecutar ChompChamps
 run: all
-	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 10
+	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 500
 
 # Test the executables
 test: all

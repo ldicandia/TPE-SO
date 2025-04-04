@@ -1,7 +1,6 @@
-#ifndef GAME_STATE_H
-#define GAME_STATE_H
+#ifndef GAME_LOGIC_H
+#define GAME_LOGIC_H
 
-#include <semaphore.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -27,13 +26,10 @@ typedef struct {
   int board[];
 } GameState;
 
-// Functions
-GameState *create_game_state(int width, int height, int num_players, unsigned int seed);
 void initialize_board(GameState *state, unsigned int seed);
 void place_players(GameState *state);
 bool is_valid_move(GameState *state, int player_idx, unsigned char move);
 bool has_valid_moves(GameState *state, int player_idx);
-void destroy_game_state(GameState *state);
 void process_move(GameState *state, int player_idx, unsigned char move);
 
-#endif
+#endif // GAME_LOGIC_H
