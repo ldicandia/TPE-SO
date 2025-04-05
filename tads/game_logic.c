@@ -46,10 +46,8 @@ void process_move(GameState *state, int player_idx, unsigned char move) {
   } else {
     int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
     int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
-
     int new_x = state->players[player_idx].x + dx[move];
     int new_y = state->players[player_idx].y + dy[move];
-
     state->players[player_idx].score += state->board[new_y * state->width + new_x];
     state->players[player_idx].x = new_x;
     state->players[player_idx].y = new_y;

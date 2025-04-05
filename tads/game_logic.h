@@ -27,9 +27,13 @@ typedef struct {
 } GameState;
 
 void initialize_board(GameState *state, unsigned int seed);
+
 void place_players(GameState *state);
+
 bool is_valid_move(GameState *state, int player_idx, unsigned char move);
+
 bool has_valid_moves(GameState *state, int player_idx);
+
 void process_move(GameState *state, int player_idx, unsigned char move);
 
 #endif // GAME_LOGIC_H

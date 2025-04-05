@@ -22,18 +22,32 @@ int main(int argc, char *argv[]) {
   }
 
   srand(getpid());
+
   GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState), O_RDONLY, PROT_READ);
   GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
-    usleep(100000);
-    unsigned char move = choose_random_move();
+    usleep(1);
 
-    write(STDOUT_FILENO, &move, sizeof(move));
-
+    sem_wait(&sync->D);
     sem_post(&sync->D);
 
-    usleep(100000);
+    sem_wait(&sync->C);
+    if (sync->F++ == 0) {
+      sem_wait(&sync->D);
+    }
+    sem_post(&sync->C);
+
+    unsigned char move = choose_random_move();
+    write(STDOUT_FILENO, &move, sizeof(move));
+
+    sem_wait(&sync->C);
+    if (--sync->F == 0) {
+      sem_post(&sync->D);
+    }
+    sem_post(&sync->C);
+
+    sem_post(&sync->D);
   }
   detach_shared_memory(state, sizeof(GameState));
   detach_shared_memory(sync, sizeof(GameSync));

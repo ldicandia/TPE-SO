@@ -26,6 +26,7 @@ const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
 #define SHM_GAME_SYNC "/game_sync"
 
 void print_board(GameState *state);
+
 void check_players_blocked(GameState *state);
 
 int main(int argc, char *argv[]) {
