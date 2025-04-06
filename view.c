@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <ncurses.h>
 #include <semaphore.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,34 +13,11 @@
 #include "tads/game_logic.h"
 #include "tads/shmemory.h"
 
-#define RED "\033[31m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN "\033[36m"
-#define GRAY "\x1b[90m"
-#define ORANGE "\033[38;5;208m"
-
-#define DARK_RED "\033[48;5;88m"
-#define DARK_GREEN "\033[48;5;22m"
-#define DARK_YELLOW "\033[48;5;94m"
-#define DARK_BLUE "\033[48;5;18m"
-#define DARK_MAGENTA "\033[48;5;53m"
-#define DARK_CYAN "\033[48;5;30m"
-#define DARK_GRAY "\033[48;5;240m"
-#define DARK_ORANGE "\033[48;5;130m"
-
-const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
-
-const char *dark_colors[] = {DARK_RED, DARK_GREEN, DARK_YELLOW, DARK_BLUE, DARK_MAGENTA, DARK_CYAN, DARK_GRAY, DARK_ORANGE};
-
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
 
 void print_board(GameState *state);
-
-void check_players_blocked(GameState *state);
+void init_colors();
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
@@ -55,105 +33,135 @@ int main(int argc, char *argv[]) {
   GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size, O_RDONLY, PROT_READ);
   GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
 
+  initscr();
+  noecho();
+  cbreak();
+  curs_set(FALSE);
+  start_color();
+  init_colors();
+
   while (true) {
     if (state->game_over) {
-      sem_post(&sync->sem_master_ready); // Liberar al master si está esperando
+      sem_post(&sync->sem_master_ready);
       break;
     }
     sem_wait(&sync->sem_view_ready);
+    clear();
     print_board(state);
+    refresh();
     sem_post(&sync->sem_master_ready);
+    usleep(200000); // Evita parpadeo excesivo
   }
 
+  endwin();
   printf("Todos los jugadores están bloqueados. Fin del juego.\n");
   printf("Game Over!\n");
   return 0;
 }
 
 void print_board(GameState *state) {
-  system("clear");
-  printf("\n\033[1m=== 🟢 ChompChamps — Game Status ===\033[0m\n\n");
+  int max_y, max_x;
+  getmaxyx(stdscr, max_y, max_x);
+  int cell_width = 5;
+  int border_width = 2;
+  int total_width = state->width * cell_width + border_width * 2;
+  int offset_x = (max_x - total_width) / 2;
+  int offset_y = (max_y - (state->height + 10)) / 2;
 
-  printf("👥 \033[1mPlayers Info:\033[0m\n");
+  if (offset_x < 0)
+    offset_x = 0;
+  if (offset_y < 0)
+    offset_y = 0;
+
+  mvprintw(0, (max_x - 28) / 2, "=== ChompChamps - Game Status ===");
+
+  mvprintw(offset_y++, offset_x, "Players:");
   for (int i = 0; i < state->num_players; i++) {
-    const char *status = state->players[i].blocked ? "🚫 Bloqueado" : "✅ Activo";
-    printf("%s[%s]\033[0m %s - Pos: (%d,%d), Score: %d\n", colors[i], state->players[i].name, status, state->players[i].x, state->players[i].y, state->players[i].score);
+    const char *status = state->players[i].blocked ? "Blocked" : "Active";
+    attron(COLOR_PAIR(i + 1));
+    mvprintw(offset_y++, offset_x, "  %s - %s - Pos: (%d,%d) - Score: %d", state->players[i].name, status, state->players[i].x, state->players[i].y, state->players[i].score);
+    attroff(COLOR_PAIR(i + 1));
   }
 
-  printf("\n🧩 \033[1mBoard (%dx%d):\033[0m\n\n", state->width, state->height);
+  offset_y += 1;
 
-  // Encabezado de columnas
-  printf("   ");
+  mvprintw(offset_y++, offset_x, "|");
+  for (int i = 0; i < state->width * cell_width - 2; i++) {
+    printw("=");
+  }
+  printw("|");
+
+  mvprintw(offset_y++, offset_x, "| ");
   for (int x = 0; x < state->width; x++) {
-    printf(" %2d", x);
+    mvprintw(offset_y - 1, offset_x + 2 + x * cell_width, "%2d", x);
   }
-  printf("\n");
+  printw(" |");
 
-  // Línea superior
-  printf("   ");
-  for (int x = 0; x < state->width; x++) {
-    printf("───");
-  }
-  printf("─\n");
-
-  // Tablero con jugadores
   for (int y = 0; y < state->height; y++) {
-    printf("%2d│", y);
-    for (int x = 0; x < state->width; x++) {
-      bool printed = false;
+    mvprintw(offset_y++, offset_x, "|");
 
-      // Mostrar jugador si está en esta celda
+    for (int x = 0; x < state->width; x++) {
+      bool player_here = false;
+
       for (int i = 0; i < state->num_players; i++) {
         if (state->players[i].x == x && state->players[i].y == y) {
-          if (state->players[i].blocked) {
-            printf("%s ✝ \033[0m", dark_colors[i]); // Cruz si está bloqueado
-          } else {
-            printf("%s \u25A0 \033[0m", dark_colors[i]); // Cuadrado oscuro si está activo
-          }
-          printed = true;
+          attron(COLOR_PAIR(i + 1));
+          mvprintw(offset_y - 1, offset_x + 2 + x * cell_width, " O ");
+          attroff(COLOR_PAIR(i + 1));
+          player_here = true;
           break;
         }
-            }
+      }
 
-      if (!printed) {
+      if (!player_here) {
         int value = state->board[y * state->width + x];
         if (value <= 0 && -value < 8) {
-          printf("%s \u25A0 \033[0m", colors[-value]);
+          attron(COLOR_PAIR(-value + 1));
+          mvprintw(offset_y - 1, offset_x + 2 + x * cell_width, " # ");
+          attroff(COLOR_PAIR(-value + 1));
         } else if (value > 0) {
-          printf(" %d ", value);
+          mvprintw(offset_y - 1, offset_x + 2 + x * cell_width, "%2d ", value);
         } else {
-          printf(" . ");
+          mvprintw(offset_y - 1, offset_x + 2 + x * cell_width, " . ");
         }
       }
     }
-    printf("│\n");
+
+    printw("|");
   }
 
-  // Línea inferior
-  printf("   ");
-  for (int x = 0; x < state->width; x++) {
-    printf("───");
+  mvprintw(offset_y++, offset_x, "|");
+  for (int i = 0; i < state->width * cell_width - 2; i++) {
+    printw("=");
   }
-  printf("─\n");
+  printw("|");
 
-  // Puntuaciones finales
-  printf("\n🏆 \033[1mPuntajes:\033[0m\n");
+  offset_y += 1;
+  mvprintw(offset_y++, offset_x, "----------------- Scoreboard -----------------");
   for (int i = 0; i < state->num_players; i++) {
-    printf(" %s%s\033[0m: %d\n", colors[i], state->players[i].name, state->players[i].score);
+    attron(COLOR_PAIR(i + 1));
+    mvprintw(offset_y++, offset_x, "Player %d: %s - Score: %2d", i + 1, state->players[i].name, state->players[i].score);
+    attroff(COLOR_PAIR(i + 1));
   }
-  printf("\n");
+  mvprintw(offset_y++, offset_x, "---------------------------------------------");
 }
 
-void check_players_blocked(GameState *state) {
-  bool all_blocked = true;
-  for (int i = 0; i < state->num_players; i++) {
-    if (!state->players[i].blocked) {
-      all_blocked = false;
-      break;
-    }
-  }
+void init_colors() {
+  init_pair(1, COLOR_RED, COLOR_BLACK);
+  init_pair(2, COLOR_GREEN, COLOR_BLACK);
+  init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(4, COLOR_BLUE, COLOR_BLACK);
+  init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
+  init_pair(6, COLOR_CYAN, COLOR_BLACK);
+  init_pair(7, COLOR_WHITE, COLOR_BLACK);
+  init_pair(8, COLOR_BLACK, COLOR_YELLOW);
 
-  if (all_blocked) {
-    state->game_over = true;
-  }
+  init_pair(9, COLOR_BLACK, COLOR_RED);
+  init_pair(10, COLOR_BLACK, COLOR_GREEN);
+  init_pair(11, COLOR_BLACK, COLOR_YELLOW);
+  init_pair(12, COLOR_BLACK, COLOR_BLUE);
+  init_pair(13, COLOR_BLACK, COLOR_MAGENTA);
+  init_pair(14, COLOR_BLACK, COLOR_CYAN);
+  init_pair(15, COLOR_BLACK, COLOR_WHITE);
+  init_pair(16, COLOR_BLACK, COLOR_YELLOW);
 }
