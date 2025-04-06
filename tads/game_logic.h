@@ -36,4 +36,4 @@ bool has_valid_moves(GameState *state, int player_idx);
 
 void process_move(GameState *state, int player_idx, unsigned char move);
 
-#endif // GAME_LOGIC_H
+#endif  // GAME_LOGIC_H

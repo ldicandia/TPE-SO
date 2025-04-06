@@ -1,4 +1,5 @@
 #include "shmemory.h"
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +29,8 @@ void destroy_shared_memory(const char *name, void *ptr, size_t size) {
   shm_unlink(name);
 }
 
-void initialize_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_state_mutex, sem_t *sem_game_mutex, sem_t *sem_reader_mutex, unsigned int *reader_count) {
+void initialize_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_state_mutex,
+                     sem_t *sem_game_mutex, sem_t *sem_reader_mutex, unsigned int *reader_count) {
   sem_init(sem_view_ready, 1, 0);
   sem_init(sem_master_ready, 1, 0);
   sem_init(sem_state_mutex, 1, 1);
@@ -37,7 +39,8 @@ void initialize_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_
   *reader_count = 0;
 }
 
-void destroy_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_state_mutex, sem_t *sem_game_mutex, sem_t *sem_reader_mutex) {
+void destroy_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_state_mutex,
+                  sem_t *sem_game_mutex, sem_t *sem_reader_mutex) {
   sem_destroy(sem_view_ready);
   sem_destroy(sem_master_ready);
   sem_destroy(sem_state_mutex);
@@ -46,12 +49,12 @@ void destroy_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_sta
 }
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
-  int fd = shm_open(name, flags, 0666); // Cambiar a O_RDONLY
+  int fd = shm_open(name, flags, 0666);  // Cambiar a O_RDONLY
   if (fd == -1) {
     perror("shm_open");
     exit(EXIT_FAILURE);
   }
-  void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd, 0); // Cambiar a PROT_READ
+  void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd, 0);  // Cambiar a PROT_READ
   if (ptr == MAP_FAILED) {
     perror("mmap");
     exit(EXIT_FAILURE);

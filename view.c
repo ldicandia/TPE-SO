@@ -31,88 +31,85 @@ void print_board(GameState *state);
 void check_players_blocked(GameState *state);
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
+    exit(EXIT_FAILURE);
+  }
 
-    int width = atoi(argv[1]);
-    int height = atoi(argv[2]);
+  int width = atoi(argv[1]);
+  int height = atoi(argv[2]);
 
-    size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
+  size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
 
-    GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size,
-                                            O_RDONLY, PROT_READ);
-    GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync),
-                                          O_RDWR, PROT_READ | PROT_WRITE);
+  GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size, O_RDONLY, PROT_READ);
+  GameSync *sync =
+      attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
 
-    while (!state->game_over) {
-        sem_wait(&sync->sem_view_ready);
-        print_board(state);
-        sem_post(&sync->sem_master_ready);
-    }
+  while (!state->game_over) {
+    sem_wait(&sync->sem_view_ready);
+    print_board(state);
+    sem_post(&sync->sem_master_ready);
+  }
 
-    printf("Todos los jugadores están bloqueados. Fin del juego.\n");
-    printf("Game Over!\n");
-    return 0;
+  printf("Todos los jugadores están bloqueados. Fin del juego.\n");
+  printf("Game Over!\n");
+  return 0;
 }
 
 void print_board(GameState *state) {
-    system("clear");
-    printf("\n=== ChompChamps ===\n");
+  system("clear");
+  printf("\n=== ChompChamps ===\n");
 
-    // Mostrar información de los jugadores
-    printf("STATUS:\n");
+  // Mostrar información de los jugadores
+  printf("STATUS:\n");
 
-    for (int i = 0; i < state->num_players; i++) {
-        if (state->players[i].blocked) {
-            printf("Jugador %s%s\033[0m está bloqueado.\n", colors[i], state->players[i].name);
-        } else {
-            printf("Jugador %s%s\033[0m - Pos: (%d, %d), Score: %d, Bloqueado: %d\n", colors[i],
-                   state->players[i].name, state->players[i].x,
-                   state->players[i].y, state->players[i].score,
-                   state->players[i].blocked);
-        }
+  for (int i = 0; i < state->num_players; i++) {
+    if (state->players[i].blocked) {
+      printf("Jugador %s%s\033[0m está bloqueado.\n", colors[i], state->players[i].name);
+    } else {
+      printf("Jugador %s%s\033[0m - Pos: (%d, %d), Score: %d, Bloqueado: %d\n", colors[i],
+             state->players[i].name, state->players[i].x, state->players[i].y,
+             state->players[i].score, state->players[i].blocked);
     }
+  }
 
-    // Copiar el tablero para poder sobreescribirlo con jugadores
-    char display_board[state->height][state->width];
-    for (int y = 0; y < state->height; y++) {
-        for (int x = 0; x < state->width; x++) {
-            display_board[y][x] = '0' + state->board[y * state->width + x];
-        }
+  // Copiar el tablero para poder sobreescribirlo con jugadores
+  char display_board[state->height][state->width];
+  for (int y = 0; y < state->height; y++) {
+    for (int x = 0; x < state->width; x++) {
+      display_board[y][x] = '0' + state->board[y * state->width + x];
     }
+  }
 
-    // Imprimir el tablero modificado
-    for (int y = 0; y < state->height; y++) {
-        for (int x = 0; x < state->width; x++) {
-            char elem = display_board[y][x];
-            if (elem <= '0') {
-                printf("%s %s \033[0m", colors['0' - elem], "\u25A0");
-            } else {
-                printf(" %c ", elem);
-            }
-        }
-        printf("\n");
+  // Imprimir el tablero modificado
+  for (int y = 0; y < state->height; y++) {
+    for (int x = 0; x < state->width; x++) {
+      char elem = display_board[y][x];
+      if (elem <= '0') {
+        printf("%s %s \033[0m", colors['0' - elem], "\u25A0");
+      } else {
+        printf(" %c ", elem);
+      }
     }
+    printf("\n");
+  }
 
-    printf("\nPlayers:\n");
-    for (int i = 0; i < state->num_players; i++) {
-        printf("%s%s\033[0m - Score: %d\n", colors[i], state->players[i].name,
-               state->players[i].score);
-    }
+  printf("\nPlayers:\n");
+  for (int i = 0; i < state->num_players; i++) {
+    printf("%s%s\033[0m - Score: %d\n", colors[i], state->players[i].name, state->players[i].score);
+  }
 }
 
 void check_players_blocked(GameState *state) {
-    bool all_blocked = true;
-    for (int i = 0; i < state->num_players; i++) {
-        if (!state->players[i].blocked) {
-            all_blocked = false;
-            break;
-        }
+  bool all_blocked = true;
+  for (int i = 0; i < state->num_players; i++) {
+    if (!state->players[i].blocked) {
+      all_blocked = false;
+      break;
     }
+  }
 
-    if (all_blocked) {
-        state->game_over = true;
-    }
+  if (all_blocked) {
+    state->game_over = true;
+  }
 }

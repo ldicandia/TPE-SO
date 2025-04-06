@@ -1,5 +1,3 @@
-#include "tads/game_logic.h"
-#include "tads/shmemory.h"
 #include <fcntl.h>
 #include <semaphore.h>
 #include <stdbool.h>
@@ -10,6 +8,9 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+
+#include "tads/game_logic.h"
+#include "tads/shmemory.h"
 
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
@@ -24,7 +25,8 @@ int main(int argc, char *argv[]) {
   srand(getpid());
 
   GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState), O_RDONLY, PROT_READ);
-  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
+  GameSync *sync =
+      attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
     usleep(1);
