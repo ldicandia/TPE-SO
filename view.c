@@ -66,9 +66,9 @@ void print_board(GameState *state) {
 
     for (int i = 0; i < state->num_players; i++) {
         if (state->players[i].blocked) {
-            printf("Jugador %s está bloqueado.\n", state->players[i].name);
+            printf("Jugador %s%s\033[0m está bloqueado.\n", colors[i], state->players[i].name);
         } else {
-            printf("Jugador %s - Pos: (%d, %d), Score: %d, Bloqueado: %d\n",
+            printf("Jugador %s%s\033[0m - Pos: (%d, %d), Score: %d, Bloqueado: %d\n", colors[i],
                    state->players[i].name, state->players[i].x,
                    state->players[i].y, state->players[i].score,
                    state->players[i].blocked);
@@ -98,7 +98,7 @@ void print_board(GameState *state) {
 
     printf("\nPlayers:\n");
     for (int i = 0; i < state->num_players; i++) {
-        printf("%s - Score: %d\n", state->players[i].name,
+        printf("%s%s\033[0m - Score: %d\n", colors[i], state->players[i].name,
                state->players[i].score);
     }
 }
