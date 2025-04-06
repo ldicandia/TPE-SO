@@ -105,11 +105,15 @@ void print_board(GameState *state) {
       // Mostrar jugador si está en esta celda
       for (int i = 0; i < state->num_players; i++) {
         if (state->players[i].x == x && state->players[i].y == y) {
-          printf("%s \u25A0 \033[0m", dark_colors[i]); // Cuadrado oscuro
+          if (state->players[i].blocked) {
+            printf("%s ✝ \033[0m", dark_colors[i]); // Cruz si está bloqueado
+          } else {
+            printf("%s \u25A0 \033[0m", dark_colors[i]); // Cuadrado oscuro si está activo
+          }
           printed = true;
           break;
         }
-      }
+            }
 
       if (!printed) {
         int value = state->board[y * state->width + x];
