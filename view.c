@@ -82,7 +82,7 @@ void print_board(GameState *state) {
     for (int x = 0; x < state->width; x++) {
       char elem = display_board[y][x];
       if (elem <= '0') {
-        printf("%s %c \033[0m", colors['0' - elem], elem);
+        printf("%s %s \033[0m", colors['0' - elem], "\u25A0");
       } else {
         printf(" %c ", elem);
       }
