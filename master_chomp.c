@@ -27,25 +27,22 @@
 #define MIN_HEIGHT 10
 #define MIN_DELAY 0
 #define MIN_TIMEOUT 0
-#define TIMEOUT_CHECK_INTERVAL 100000  // in microseconds
+#define TIMEOUT_CHECK_INTERVAL 100000 // in microseconds
 #define MAX_STR_LEN 10
 
 pid_t spawn_process(const char *path, char *width, char *height);
-void parse_arguments(int argc, char *argv[], int *width, int *height, int *delay, int *timeout,
-                     unsigned int *seed, char **view_path, char *player_paths[], int *num_players);
-void print_parameters(int width, int height, int delay, int timeout, unsigned int seed,
-                      char *view_path, char *player_paths[], int num_players);
+void parse_arguments(int argc, char *argv[], int *width, int *height, int *delay, int *timeout, unsigned int *seed, char **view_path, char *player_paths[], int *num_players);
+void print_parameters(int width, int height, int delay, int timeout, unsigned int seed, char *view_path, char *player_paths[], int num_players);
+void check_results(int num_players, pid_t player_pids[], GameState *state, pid_t view_pid);
 
 int main(int argc, char *argv[]) {
-  int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, delay = DEFAULT_DELAY,
-      timeout = DEFAULT_TIMEOUT;
+  int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, delay = DEFAULT_DELAY, timeout = DEFAULT_TIMEOUT;
   unsigned int seed = time(NULL);
   char *view_path = NULL;
   char *player_paths[MAX_PLAYERS];
   int num_players = 0;
 
-  parse_arguments(argc, argv, &width, &height, &delay, &timeout, &seed, &view_path, player_paths,
-                  &num_players);
+  parse_arguments(argc, argv, &width, &height, &delay, &timeout, &seed, &view_path, player_paths, &num_players);
   print_parameters(width, height, delay, timeout, seed, view_path, player_paths, num_players);
 
   if (num_players < 1 || num_players > MAX_PLAYERS) {
@@ -58,8 +55,7 @@ int main(int argc, char *argv[]) {
   GameState *state = create_shared_memory(SHM_GAME_STATE, game_state_size);
   GameSync *sync = create_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
 
-  initialize_sync(&sync->sem_view_ready, &sync->sem_master_ready, &sync->sem_state_mutex,
-                  &sync->sem_game_mutex, &sync->sem_reader_mutex, &sync->reader_count);
+  initialize_sync(&sync->sem_view_ready, &sync->sem_master_ready, &sync->sem_state_mutex, &sync->sem_game_mutex, &sync->sem_reader_mutex, &sync->reader_count);
 
   state->width = width;
   state->height = height;
@@ -113,7 +109,8 @@ int main(int argc, char *argv[]) {
   struct timeval tv;
   int max_fd = -1;
   for (int i = 0; i < num_players; i++) {
-    if (player_pipes[i][0] > max_fd) max_fd = player_pipes[i][0];
+    if (player_pipes[i][0] > max_fd)
+      max_fd = player_pipes[i][0];
   }
 
   int blocked_players = 0;
@@ -183,7 +180,9 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    usleep(delay * 1000);
+    if (view_pid) {
+      usleep(delay * 1000);
+    }
   }
 
   free(last_move_times);
@@ -193,30 +192,9 @@ int main(int argc, char *argv[]) {
     close(player_pipes[i][0]);
   }
 
-  // CHECK RESULTS
-  for (int i = 0; i < num_players; i++) {
-    int status;
-    waitpid(player_pids[i], &status, 0);
-    if (WIFEXITED(status)) {
-      printf("Player %d || Exit status %d || Score = %d\n", i + 1, WEXITSTATUS(status),
-             state->players[i].score);
-    } else if (WIFSIGNALED(status)) {
-      printf("Player %d || Killed by signal %d\n", i + 1, WTERMSIG(status));
-    } else if (WIFSTOPPED(status)) {
-      printf("Player %d || Stopped by signal %d\n", i + 1, WSTOPSIG(status));
-    } else {
-      printf("Player %d || Unknown status\n", i);
-    }
-  }
+  check_results(num_players, player_pids, state, view_pid);
 
-  if (view_pid) {
-    int status;
-    waitpid(view_pid, &status, 0);
-    printf("View (PID %d) exited with status %d\n", view_pid, status);
-  }
-
-  destroy_sync(&sync->sem_view_ready, &sync->sem_master_ready, &sync->sem_state_mutex,
-               &sync->sem_game_mutex, &sync->sem_reader_mutex);
+  destroy_sync(&sync->sem_view_ready, &sync->sem_master_ready, &sync->sem_state_mutex, &sync->sem_game_mutex, &sync->sem_reader_mutex);
   destroy_shared_memory(SHM_GAME_STATE, state, game_state_size);
   destroy_shared_memory(SHM_GAME_SYNC, sync, sizeof(GameSync));
 
@@ -233,63 +211,83 @@ pid_t spawn_process(const char *path, char *width, char *height) {
   return pid;
 }
 
-void parse_arguments(int argc, char *argv[], int *width, int *height, int *delay, int *timeout,
-                     unsigned int *seed, char **view_path, char *player_paths[], int *num_players) {
+void check_results(int num_players, pid_t player_pids[], GameState *state, pid_t view_pid) {
+  for (int i = 0; i < num_players; i++) {
+    int status;
+    waitpid(player_pids[i], &status, 0);
+    if (WIFEXITED(status)) {
+      printf("Player %d || Exit status %d || Score = %d\n", i + 1, WEXITSTATUS(status), state->players[i].score);
+    } else if (WIFSIGNALED(status)) {
+      printf("Player %d || Killed by signal %d\n", i + 1, WTERMSIG(status));
+    } else if (WIFSTOPPED(status)) {
+      printf("Player %d || Stopped by signal %d\n", i + 1, WSTOPSIG(status));
+    } else {
+      printf("Player %d || Unknown status\n", i);
+    }
+  }
+
+  if (view_pid) {
+    int status;
+    waitpid(view_pid, &status, 0);
+    printf("View (PID %d) exited with status %d\n", view_pid, status);
+  }
+}
+
+void parse_arguments(int argc, char *argv[], int *width, int *height, int *delay, int *timeout, unsigned int *seed, char **view_path, char *player_paths[], int *num_players) {
   int opt;
   while ((opt = getopt(argc, argv, "w:h:d:t:s:v:p:")) != -1) {
     switch (opt) {
-      case 'w':
-        *width = atoi(optarg);
-        if (*width < MIN_WIDTH) {
-          fprintf(stderr, "Error: minimum width must be %d.\n", MIN_WIDTH);
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 'h':
-        *height = atoi(optarg);
-        if (*height < MIN_HEIGHT) {
-          fprintf(stderr, "Error: minimum height must be %d.\n", MIN_HEIGHT);
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 'd':
-        *delay = atoi(optarg);
-        if (*delay < MIN_DELAY) {
-          fprintf(stderr, "Error: delay must be non-negative.\n");
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 't':
-        *timeout = atoi(optarg);
-        if (*timeout < MIN_TIMEOUT) {
-          fprintf(stderr, "Error: timeout must be non-negative.\n");
-          exit(EXIT_FAILURE);
-        }
-        break;
-      case 's':
-        *seed = atoi(optarg);
-        break;
-      case 'v':
-        *view_path = optarg;
-        break;
-      case 'p':
-        optind--;
-        while (optind < argc && *num_players < MAX_PLAYERS && argv[optind][0] != '-') {
-          player_paths[(*num_players)++] = argv[optind++];
-        }
-        break;
-      default:
-        fprintf(stderr,
-                "Usage: %s [-w width] [-h height] [-d delay] [-t timeout] [-s seed] [-v "
-                "view_path] [-p player_paths...]\n",
-                argv[0]);
+    case 'w':
+      *width = atoi(optarg);
+      if (*width < MIN_WIDTH) {
+        fprintf(stderr, "Error: minimum width must be %d.\n", MIN_WIDTH);
         exit(EXIT_FAILURE);
+      }
+      break;
+    case 'h':
+      *height = atoi(optarg);
+      if (*height < MIN_HEIGHT) {
+        fprintf(stderr, "Error: minimum height must be %d.\n", MIN_HEIGHT);
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 'd':
+      *delay = atoi(optarg);
+      if (*delay < MIN_DELAY) {
+        fprintf(stderr, "Error: delay must be non-negative.\n");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 't':
+      *timeout = atoi(optarg);
+      if (*timeout < MIN_TIMEOUT) {
+        fprintf(stderr, "Error: timeout must be non-negative.\n");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 's':
+      *seed = atoi(optarg);
+      break;
+    case 'v':
+      *view_path = optarg;
+      break;
+    case 'p':
+      optind--;
+      while (optind < argc && *num_players < MAX_PLAYERS && argv[optind][0] != '-') {
+        player_paths[(*num_players)++] = argv[optind++];
+      }
+      break;
+    default:
+      fprintf(stderr,
+              "Usage: %s [-w width] [-h height] [-d delay] [-t timeout] [-s seed] [-v "
+              "view_path] [-p player_paths...]\n",
+              argv[0]);
+      exit(EXIT_FAILURE);
     }
   }
 }
 
-void print_parameters(int width, int height, int delay, int timeout, unsigned int seed,
-                      char *view_path, char *player_paths[], int num_players) {
+void print_parameters(int width, int height, int delay, int timeout, unsigned int seed, char *view_path, char *player_paths[], int num_players) {
   printf("Parameters:\n");
   printf("Width: %d\n", width);
   printf("Height: %d\n", height);

@@ -25,11 +25,10 @@ int main(int argc, char *argv[]) {
   srand(getpid());
 
   GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState), O_RDONLY, PROT_READ);
-  GameSync *sync =
-      attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
+  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
 
   while (!state->game_over) {
-    usleep(1);
+    usleep(200000);
 
     sem_wait(&sync->sem_game_mutex);
     sem_post(&sync->sem_game_mutex);

@@ -61,7 +61,7 @@ clean:
 
 # Ejecutar ChompChamps
 run: all
-	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 50
+	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 10
 
 # Test the executables
 test: all
@@ -70,13 +70,13 @@ test: all
 	@echo "Running master_chomp with parameters..."
 	@./$(MASTER) -w 10 -h 10 -t 5 -p $(PLAYER) $(PLAYER) -v $(VIEW) -d 10 || RET1=$$?
 	@sleep 3
-	@./$(MASTER) -w 15 -h 15 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 10 || RET2=$$?
+	@./$(MASTER) -w 15 -h 15 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 100 || RET2=$$?
 	@sleep 3
-	@./$(MASTER) -w 20 -h 20 -t 3 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 10 || RET3=$$?
+	@./$(MASTER) -w 20 -h 20 -t 3 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 200 || RET3=$$?
 	@sleep 3
-	@./$(MASTER) -w 5 -h 5 -t 2 -p $(PLAYER) $(PLAYER) -v $(VIEW) -d 10 || RET4=$$?
+	@./$(MASTER) -w 5 -h 5 -t 2 -p $(PLAYER) $(PLAYER) -v $(VIEW) -d 50 || RET4=$$?
 	@sleep 3
-	@valgrind --leak-check=full --show-leak-kinds=all ./$(MASTER) -w 25 -h 25 -t 15 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 10 || RET5=$$?
+	@valgrind --leak-check=full --show-leak-kinds=all ./$(MASTER) -w 25 -h 25 -t 15 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 50 || RET5=$$?
 	@sleep 3
 	@echo "All tests completed."
 	@echo "Test Results:"

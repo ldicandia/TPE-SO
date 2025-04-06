@@ -18,7 +18,7 @@
 #define BLUE "\033[34m"
 #define MAGENTA "\033[35m"
 #define CYAN "\033[36m"
-#define GRAY "\x1b[90m"  // Gris oscuro
+#define GRAY "\x1b[90m" // Gris oscuro
 #define ORANGE "\033[38;5;208m"
 
 const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
@@ -42,10 +42,13 @@ int main(int argc, char *argv[]) {
   size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
 
   GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size, O_RDONLY, PROT_READ);
-  GameSync *sync =
-      attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
+  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
 
-  while (!state->game_over) {
+  while (true) {
+    if (state->game_over) {
+      sem_post(&sync->sem_master_ready); // Liberar al master si está esperando
+      break;
+    }
     sem_wait(&sync->sem_view_ready);
     print_board(state);
     sem_post(&sync->sem_master_ready);
@@ -67,9 +70,7 @@ void print_board(GameState *state) {
     if (state->players[i].blocked) {
       printf("Jugador %s%s\033[0m está bloqueado.\n", colors[i], state->players[i].name);
     } else {
-      printf("Jugador %s%s\033[0m - Pos: (%d, %d), Score: %d, Bloqueado: %d\n", colors[i],
-             state->players[i].name, state->players[i].x, state->players[i].y,
-             state->players[i].score, state->players[i].blocked);
+      printf("Jugador %s%s\033[0m - Pos: (%d, %d), Score: %d, Bloqueado: %d\n", colors[i], state->players[i].name, state->players[i].x, state->players[i].y, state->players[i].score, state->players[i].blocked);
     }
   }
 
