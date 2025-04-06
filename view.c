@@ -18,10 +18,21 @@
 #define BLUE "\033[34m"
 #define MAGENTA "\033[35m"
 #define CYAN "\033[36m"
-#define GRAY "\x1b[90m" // Gris oscuro
+#define GRAY "\x1b[90m"
 #define ORANGE "\033[38;5;208m"
 
+#define DARK_RED "\033[48;5;88m"
+#define DARK_GREEN "\033[48;5;22m"
+#define DARK_YELLOW "\033[48;5;94m"
+#define DARK_BLUE "\033[48;5;18m"
+#define DARK_MAGENTA "\033[48;5;53m"
+#define DARK_CYAN "\033[48;5;30m"
+#define DARK_GRAY "\033[48;5;240m"
+#define DARK_ORANGE "\033[48;5;130m"
+
 const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
+
+const char *dark_colors[] = {DARK_RED, DARK_GREEN, DARK_YELLOW, DARK_BLUE, DARK_MAGENTA, DARK_CYAN, DARK_GRAY, DARK_ORANGE};
 
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
@@ -61,44 +72,72 @@ int main(int argc, char *argv[]) {
 
 void print_board(GameState *state) {
   system("clear");
-  printf("\n=== ChompChamps ===\n");
+  printf("\n\033[1m=== 🟢 ChompChamps — Game Status ===\033[0m\n\n");
 
-  // Mostrar información de los jugadores
-  printf("STATUS:\n");
-
+  printf("👥 \033[1mPlayers Info:\033[0m\n");
   for (int i = 0; i < state->num_players; i++) {
-    if (state->players[i].blocked) {
-      printf("Jugador %s%s\033[0m está bloqueado.\n", colors[i], state->players[i].name);
-    } else {
-      printf("Jugador %s%s\033[0m - Pos: (%d, %d), Score: %d, Bloqueado: %d\n", colors[i], state->players[i].name, state->players[i].x, state->players[i].y, state->players[i].score, state->players[i].blocked);
-    }
+    const char *status = state->players[i].blocked ? "🚫 Bloqueado" : "✅ Activo";
+    printf("%s[%s]\033[0m %s - Pos: (%d,%d), Score: %d\n", colors[i], state->players[i].name, status, state->players[i].x, state->players[i].y, state->players[i].score);
   }
 
-  // Copiar el tablero para poder sobreescribirlo con jugadores
-  char display_board[state->height][state->width];
-  for (int y = 0; y < state->height; y++) {
-    for (int x = 0; x < state->width; x++) {
-      display_board[y][x] = '0' + state->board[y * state->width + x];
-    }
-  }
+  printf("\n🧩 \033[1mBoard (%dx%d):\033[0m\n\n", state->width, state->height);
 
-  // Imprimir el tablero modificado
+  // Encabezado de columnas
+  printf("   ");
+  for (int x = 0; x < state->width; x++) {
+    printf(" %2d", x);
+  }
+  printf("\n");
+
+  // Línea superior
+  printf("   ");
+  for (int x = 0; x < state->width; x++) {
+    printf("───");
+  }
+  printf("─\n");
+
+  // Tablero con jugadores
   for (int y = 0; y < state->height; y++) {
+    printf("%2d│", y);
     for (int x = 0; x < state->width; x++) {
-      char elem = display_board[y][x];
-      if (elem <= '0') {
-        printf("%s %s \033[0m", colors['0' - elem], "\u25A0");
-      } else {
-        printf(" %c ", elem);
+      bool printed = false;
+
+      // Mostrar jugador si está en esta celda
+      for (int i = 0; i < state->num_players; i++) {
+        if (state->players[i].x == x && state->players[i].y == y) {
+          printf("%s \u25A0 \033[0m", dark_colors[i]); // Cuadrado oscuro
+          printed = true;
+          break;
+        }
+      }
+
+      if (!printed) {
+        int value = state->board[y * state->width + x];
+        if (value <= 0 && -value < 8) {
+          printf("%s \u25A0 \033[0m", colors[-value]);
+        } else if (value > 0) {
+          printf(" %d ", value);
+        } else {
+          printf(" . ");
+        }
       }
     }
-    printf("\n");
+    printf("│\n");
   }
 
-  printf("\nPlayers:\n");
-  for (int i = 0; i < state->num_players; i++) {
-    printf("%s%s\033[0m - Score: %d\n", colors[i], state->players[i].name, state->players[i].score);
+  // Línea inferior
+  printf("   ");
+  for (int x = 0; x < state->width; x++) {
+    printf("───");
   }
+  printf("─\n");
+
+  // Puntuaciones finales
+  printf("\n🏆 \033[1mPuntajes:\033[0m\n");
+  for (int i = 0; i < state->num_players; i++) {
+    printf(" %s%s\033[0m: %d\n", colors[i], state->players[i].name, state->players[i].score);
+  }
+  printf("\n");
 }
 
 void check_players_blocked(GameState *state) {
