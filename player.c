@@ -29,25 +29,25 @@ int main(int argc, char *argv[]) {
   while (!state->game_over) {
     usleep(1);
 
-    sem_wait(&sync->D);
-    sem_post(&sync->D);
+    sem_wait(&sync->sem_game_mutex);
+    sem_post(&sync->sem_game_mutex);
 
-    sem_wait(&sync->C);
-    if (sync->F++ == 0) {
-      sem_wait(&sync->D);
+    sem_wait(&sync->sem_state_mutex);
+    if (sync->reader_count++ == 0) {
+      sem_wait(&sync->sem_game_mutex);
     }
-    sem_post(&sync->C);
+    sem_post(&sync->sem_state_mutex);
 
     unsigned char move = choose_random_move();
     write(STDOUT_FILENO, &move, sizeof(move));
 
-    sem_wait(&sync->C);
-    if (--sync->F == 0) {
-      sem_post(&sync->D);
+    sem_wait(&sync->sem_state_mutex);
+    if (--sync->reader_count == 0) {
+      sem_post(&sync->sem_game_mutex);
     }
-    sem_post(&sync->C);
+    sem_post(&sync->sem_state_mutex);
 
-    sem_post(&sync->D);
+    sem_post(&sync->sem_game_mutex);
   }
   detach_shared_memory(state, sizeof(GameState));
   detach_shared_memory(sync, sizeof(GameSync));

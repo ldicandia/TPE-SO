@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   GameState *state = create_shared_memory(SHM_GAME_STATE, game_state_size);
   GameSync *sync = create_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
 
-  initialize_sync(&sync->A, &sync->B, &sync->C, &sync->D, &sync->E, &sync->F);
+  initialize_sync(&sync->sem_view_ready, &sync->sem_master_ready, &sync->sem_state_mutex, &sync->sem_game_mutex, &sync->sem_reader_mutex, &sync->reader_count);
 
   state->width = width;
   state->height = height;
@@ -131,8 +131,8 @@ int main(int argc, char *argv[]) {
     if (blocked_players == num_players) {
       state->game_over = true;
       if (view_pid) {
-        sem_post(&sync->A);
-        sem_wait(&sync->B);
+        sem_post(&sync->sem_view_ready);
+        sem_wait(&sync->sem_master_ready);
       }
     }
 
@@ -161,17 +161,17 @@ int main(int argc, char *argv[]) {
           state->players[i].blocked = true;
           blocked_players++;
         } else {
-          sem_wait(&sync->C);
-          sem_wait(&sync->D);
+          sem_wait(&sync->sem_state_mutex);
+          sem_wait(&sync->sem_game_mutex);
 
           process_move(state, i, move);
 
-          sem_post(&sync->D);
+          sem_post(&sync->sem_game_mutex);
           if (view_pid) {
-            sem_post(&sync->A);
-            sem_wait(&sync->B);
+            sem_post(&sync->sem_view_ready);
+            sem_wait(&sync->sem_master_ready);
           }
-          sem_post(&sync->C);
+          sem_post(&sync->sem_state_mutex);
 
           last_move_times[i] = time(NULL);
         }
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     printf("View (PID %d) exited with status %d\n", view_pid, status);
   }
 
-  destroy_sync(&sync->A, &sync->B, &sync->C, &sync->D, &sync->E);
+  destroy_sync(&sync->sem_view_ready, &sync->sem_master_ready, &sync->sem_state_mutex, &sync->sem_game_mutex, &sync->sem_reader_mutex);
   destroy_shared_memory(SHM_GAME_STATE, state, game_state_size);
   destroy_shared_memory(SHM_GAME_SYNC, sync, sizeof(GameSync));
 

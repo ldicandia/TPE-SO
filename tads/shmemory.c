@@ -28,21 +28,21 @@ void destroy_shared_memory(const char *name, void *ptr, size_t size) {
   shm_unlink(name);
 }
 
-void initialize_sync(sem_t *A, sem_t *B, sem_t *C, sem_t *D, sem_t *E, unsigned int *F) {
-  sem_init(A, 1, 0);
-  sem_init(B, 1, 0);
-  sem_init(C, 1, 1);
-  sem_init(D, 1, 1);
-  sem_init(E, 1, 1);
-  *F = 0;
+void initialize_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_state_mutex, sem_t *sem_game_mutex, sem_t *sem_reader_mutex, unsigned int *reader_count) {
+  sem_init(sem_view_ready, 1, 0);
+  sem_init(sem_master_ready, 1, 0);
+  sem_init(sem_state_mutex, 1, 1);
+  sem_init(sem_game_mutex, 1, 1);
+  sem_init(sem_reader_mutex, 1, 1);
+  *reader_count = 0;
 }
 
-void destroy_sync(sem_t *A, sem_t *B, sem_t *C, sem_t *D, sem_t *E) {
-  sem_destroy(A);
-  sem_destroy(B);
-  sem_destroy(C);
-  sem_destroy(D);
-  sem_destroy(E);
+void destroy_sync(sem_t *sem_view_ready, sem_t *sem_master_ready, sem_t *sem_state_mutex, sem_t *sem_game_mutex, sem_t *sem_reader_mutex) {
+  sem_destroy(sem_view_ready);
+  sem_destroy(sem_master_ready);
+  sem_destroy(sem_state_mutex);
+  sem_destroy(sem_game_mutex);
+  sem_destroy(sem_reader_mutex);
 }
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
