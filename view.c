@@ -40,11 +40,19 @@ void display_game_over_message(GameState *state) {
     // Print the "Game Over" sign
     mvprintw(5, 10, " ██████╗  █████╗ ███╗   ███╗███████╗     ██████╗ ██╗   ██╗███████╗██████╗ ");
     mvprintw(6, 10, "██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██╔═══██╗██║   ██║██╔════╝██╔══██╗");
-    mvprintw(7, 10, "██║  ███╗███████║██╔████╔██║█████╗      ██║   ██║██║   ██║█████╗  ██████╔╝");
-    mvprintw(8, 10, "██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██║   ██║██║   ██║██╔══╝  ██╔═══╝ ");
-    mvprintw(9, 10, "╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚██████╔╝╚██████╔╝███████╗██║     ");
-    mvprintw(10, 10, " ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝  ╚═════╝ ╚══════╝╚═╝     ");
-    mvprintw(11, 0, "        === No me sale la R! Y al choto de gpt tampoco!! ===");
+    mvprintw(7, 10, "██║  ███╗███████║██╔████╔██║█████╗      ██║   ██║██║   ██║█████╗  █████╔╝");
+    mvprintw(8, 10, "██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██║   ██║██║   ██║██╔══╝  ██╔███╔═╝ ");
+    mvprintw(9, 10, "╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚██████╔╝╚██████╔╝███████╗██║ ███║     ");
+    mvprintw(10, 10, " ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝  ╚═════╝ ╚══════╝╚═╝ ╚══╝    ");
+    
+
+
+    /*TODO -- cosas q rompi
+    
+    -El color de la cabeza es el correcto de cada serpiente, el cuerpo esta saliendo de otro color, creo q incluso hay una que sale con puntitos nada q ver
+    - la cruz para las serpientes muertas
+    - la pantalla de game over  */
+
 
 
     // Print players' results below the "Game Over" sign
