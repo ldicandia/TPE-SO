@@ -37,7 +37,7 @@ $(MASTER): $(MASTER_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ)
 # Compilar la vista
 $(VIEW): $(VIEW_OBJ)
 	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $(VIEW) $(VIEW_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ)
+	$(CC) $(CFLAGS) -o $(VIEW) $(VIEW_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ) -lncursesw
 
 # Compilar el jugador
 $(PLAYER): $(PLAYER_OBJ)
