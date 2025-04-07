@@ -27,7 +27,7 @@
 #define MIN_HEIGHT 10
 #define MIN_DELAY 0
 #define MIN_TIMEOUT 0
-#define TIMEOUT_CHECK_INTERVAL 100000 // in microseconds
+#define TIMEOUT_CHECK_INTERVAL 100000 // microseconds
 #define MAX_STR_LEN 10
 
 pid_t spawn_process(const char *path, char *width, char *height);
@@ -50,7 +50,6 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  // Create shared memory for game state and synchronization
   size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
   GameState *state = create_shared_memory(SHM_GAME_STATE, game_state_size);
   GameSync *sync = create_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
@@ -81,7 +80,6 @@ int main(int argc, char *argv[]) {
   sprintf(width_str, "%d", width);
   sprintf(height_str, "%d", height);
 
-  // Spawn view process
   pid_t view_pid = view_path ? spawn_process(view_path, width_str, height_str) : 0;
 
   // Spawn player processes
@@ -99,7 +97,6 @@ int main(int argc, char *argv[]) {
     close(player_pipes[i][1]);
   }
 
-  // Main game loop
   time_t *last_move_times = malloc(num_players * sizeof(time_t));
   for (int i = 0; i < num_players; i++) {
     last_move_times[i] = time(NULL);

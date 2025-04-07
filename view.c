@@ -31,7 +31,6 @@
 #define DARK_ORANGE "\033[48;5;130m"
 
 const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
-
 const char *dark_colors[] = {DARK_RED, DARK_GREEN, DARK_YELLOW, DARK_BLUE, DARK_MAGENTA, DARK_CYAN, DARK_GRAY, DARK_ORANGE};
 
 #define SHM_GAME_STATE "/game_state"
@@ -57,7 +56,7 @@ int main(int argc, char *argv[]) {
 
   while (true) {
     if (state->game_over) {
-      sem_post(&sync->sem_master_ready); // Liberar al master si está esperando
+      sem_post(&sync->sem_master_ready);
       break;
     }
     sem_wait(&sync->sem_view_ready);
@@ -82,33 +81,28 @@ void print_board(GameState *state) {
 
   printf("\n🧩 \033[1mBoard (%dx%d):\033[0m\n\n", state->width, state->height);
 
-  // Encabezado de columnas
-  printf("   ");
+  printf("    ");
   for (int x = 0; x < state->width; x++) {
-    printf(" %2d", x);
+    printf(" %2d ", x);
   }
   printf("\n");
 
-  // Línea superior
   printf("   ");
   for (int x = 0; x < state->width; x++) {
-    printf("───");
+    printf("────");
   }
   printf("─\n");
 
-  // Tablero con jugadores
   for (int y = 0; y < state->height; y++) {
-    printf("%2d│", y);
+    printf(" %2d│", y);
     for (int x = 0; x < state->width; x++) {
       bool printed = false;
-
-      // Mostrar jugador si está en esta celda
       for (int i = 0; i < state->num_players; i++) {
         if (state->players[i].x == x && state->players[i].y == y) {
           if (state->players[i].blocked) {
-            printf("%s ✝ \033[0m", dark_colors[i]); // Cruz si está bloqueado
+            printf("%s ✝  \033[0m", dark_colors[i]);
           } else {
-            printf("%s \u25A0 \033[0m", dark_colors[i]); // Cuadrado oscuro si está activo
+            printf("%s ■  \033[0m", dark_colors[i]);
           }
           printed = true;
           break;
@@ -118,30 +112,50 @@ void print_board(GameState *state) {
       if (!printed) {
         int value = state->board[y * state->width + x];
         if (value <= 0 && -value < 8) {
-          printf("%s \u25A0 \033[0m", colors[-value]);
+          printf("%s ■  \033[0m", colors[-value]); // Casilla coloreada
         } else if (value > 0) {
-          printf(" %d ", value);
+          printf(" %2d ", value);
         } else {
-          printf(" . ");
+          printf(" .. ");
         }
       }
     }
     printf("│\n");
   }
 
-  // Línea inferior
-  printf("   ");
+  printf("    ");
   for (int x = 0; x < state->width; x++) {
-    printf("───");
+    printf("────");
   }
   printf("─\n");
 
-  // Puntuaciones finales
   printf("\n🏆 \033[1mPuntajes:\033[0m\n");
-  for (int i = 0; i < state->num_players; i++) {
-    printf(" %s[%s]\033[0m: %d\n", colors[i], state->players[i].name, state->players[i].score);
+
+  int indices[8];
+  for (int i = 0; i < state->num_players; i++)
+    indices[i] = i;
+
+  // Ordenar por puntaje
+  for (int i = 0; i < state->num_players - 1; i++) {
+    for (int j = 0; j < state->num_players - i - 1; j++) {
+      if (state->players[indices[j]].score < state->players[indices[j + 1]].score) {
+        int temp = indices[j];
+        indices[j] = indices[j + 1];
+        indices[j + 1] = temp;
+      }
+    }
   }
-  printf("\n");
+
+  for (int i = 0; i < state->num_players; i++) {
+    int idx = indices[i];
+    printf(" %s[%s]\033[0m: %d\n", colors[idx], state->players[idx].name, state->players[idx].score);
+  }
+
+  // Leyenda
+  printf("\n🗒️  \033[1mLeyenda:\033[0m\n");
+  printf(" ■  Casilla de color del jugador\n");
+  printf(" ✝  Jugador bloqueado\n");
+  printf(" ■  Jugador activo\n");
 
   printf("\n\033[1m====================================\033[0m\n\n");
 }
