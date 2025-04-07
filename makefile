@@ -85,7 +85,6 @@ test: all
 	@echo "master_chomp test 3 exit code: $$RET3";
 	@echo "master_chomp test 4 exit code: $$RET4"
 	@echo "master_chomp test 5 exit code: $$RET5"	
- 
 
 # Ejecutar el programa con master nuestro
 #gcc master_chomp.c -o master_chomp

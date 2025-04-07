@@ -18,41 +18,45 @@
 unsigned char choose_random_move();
 
 int main(int argc, char *argv[]) {
-  if (argc != 3) {
-    exit(EXIT_FAILURE);
-  }
+	if (argc != 3) {
+		exit(EXIT_FAILURE);
+	}
 
-  srand(getpid());
+	srand(getpid());
 
-  GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState), O_RDONLY, PROT_READ);
-  GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync), O_RDWR, PROT_READ | PROT_WRITE);
+	GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState),
+											O_RDONLY, PROT_READ);
+	GameSync *sync	 = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync),
+											O_RDWR, PROT_READ | PROT_WRITE);
 
-  while (!state->game_over) {
-    usleep(200000);
+	while (!state->game_over) {
+		usleep(200000);
 
-    sem_wait(&sync->sem_game_mutex);
-    sem_post(&sync->sem_game_mutex);
+		sem_wait(&sync->sem_game_mutex);
+		sem_post(&sync->sem_game_mutex);
 
-    sem_wait(&sync->sem_state_mutex);
-    if (sync->reader_count++ == 0) {
-      sem_wait(&sync->sem_game_mutex);
-    }
-    sem_post(&sync->sem_state_mutex);
+		sem_wait(&sync->sem_state_mutex);
+		if (sync->reader_count++ == 0) {
+			sem_wait(&sync->sem_game_mutex);
+		}
+		sem_post(&sync->sem_state_mutex);
 
-    unsigned char move = choose_random_move();
-    write(STDOUT_FILENO, &move, sizeof(move));
+		unsigned char move = choose_random_move();
+		write(STDOUT_FILENO, &move, sizeof(move));
 
-    sem_wait(&sync->sem_state_mutex);
-    if (--sync->reader_count == 0) {
-      sem_post(&sync->sem_game_mutex);
-    }
-    sem_post(&sync->sem_state_mutex);
+		sem_wait(&sync->sem_state_mutex);
+		if (--sync->reader_count == 0) {
+			sem_post(&sync->sem_game_mutex);
+		}
+		sem_post(&sync->sem_state_mutex);
 
-    sem_post(&sync->sem_game_mutex);
-  }
-  detach_shared_memory(state, sizeof(GameState));
-  detach_shared_memory(sync, sizeof(GameSync));
-  return 0;
+		sem_post(&sync->sem_game_mutex);
+	}
+	detach_shared_memory(state, sizeof(GameState));
+	detach_shared_memory(sync, sizeof(GameSync));
+	return 0;
 }
 
-unsigned char choose_random_move() { return rand() % 8; }
+unsigned char choose_random_move() {
+	return rand() % 8;
+}

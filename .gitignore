@@ -1,3 +1,7 @@
 
 .clang-format
+.clang-tidy
 *.o
+master_chomp
+player
+view
