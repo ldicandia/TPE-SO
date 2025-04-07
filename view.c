@@ -77,7 +77,7 @@ void print_board(GameState *state) {
   printf("👥 \033[1mPlayers Info:\033[0m\n");
   for (int i = 0; i < state->num_players; i++) {
     const char *status = state->players[i].blocked ? "🚫 Bloqueado" : "✅ Activo";
-    printf("%s[%s]\033[0m %s - Pos: (%d,%d), Score: %d\n", colors[i], state->players[i].name, status, state->players[i].x, state->players[i].y, state->players[i].score);
+    printf("%s[%s]\033[0m %s - Pos: (%d,%d)\n", colors[i], state->players[i].name, status, state->players[i].x, state->players[i].y);
   }
 
   printf("\n🧩 \033[1mBoard (%dx%d):\033[0m\n\n", state->width, state->height);
@@ -113,7 +113,7 @@ void print_board(GameState *state) {
           printed = true;
           break;
         }
-            }
+      }
 
       if (!printed) {
         int value = state->board[y * state->width + x];
@@ -139,9 +139,11 @@ void print_board(GameState *state) {
   // Puntuaciones finales
   printf("\n🏆 \033[1mPuntajes:\033[0m\n");
   for (int i = 0; i < state->num_players; i++) {
-    printf(" %s%s\033[0m: %d\n", colors[i], state->players[i].name, state->players[i].score);
+    printf(" %s[%s]\033[0m: %d\n", colors[i], state->players[i].name, state->players[i].score);
   }
   printf("\n");
+
+  printf("\n\033[1m====================================\033[0m\n\n");
 }
 
 void check_players_blocked(GameState *state) {
