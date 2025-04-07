@@ -20,6 +20,7 @@
 #define CYAN "\033[36m"
 #define GRAY "\x1b[90m"
 #define ORANGE "\033[38;5;208m"
+#define WHITE "\033[37m"
 
 #define DARK_RED "\033[48;5;88m"
 #define DARK_GREEN "\033[48;5;22m"
@@ -29,9 +30,10 @@
 #define DARK_CYAN "\033[48;5;30m"
 #define DARK_GRAY "\033[48;5;240m"
 #define DARK_ORANGE "\033[48;5;130m"
+#define DARK_WHITE "\033[48;5;255m"
 
-const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE};
-const char *dark_colors[] = {DARK_RED, DARK_GREEN, DARK_YELLOW, DARK_BLUE, DARK_MAGENTA, DARK_CYAN, DARK_GRAY, DARK_ORANGE};
+const char *colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, GRAY, ORANGE, WHITE};
+const char *dark_colors[] = {DARK_RED, DARK_GREEN, DARK_YELLOW, DARK_BLUE, DARK_MAGENTA, DARK_CYAN, DARK_GRAY, DARK_ORANGE, DARK_WHITE};
 
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
@@ -71,7 +73,14 @@ int main(int argc, char *argv[]) {
 
 void print_board(GameState *state) {
   system("clear");
-  printf("\n\033[1m=== 🟢 ChompChamps — Game Status ===\033[0m\n\n");
+  // printf("\n\033[1m=== 🟢 ChompChamps — Game Status ===\033[0m\n\n");
+
+  printf(" ██████╗██╗  ██╗ ██████╗ ███╗   ███╗██████╗      ██████╗██╗  ██╗ █████╗ ███╗   ███╗██████╗ ██████╗      \n");
+  printf("██╔════╝██║  ██║██╔═══██╗████╗ ████║██╔══██╗    ██╔════╝██║  ██║██╔══██╗████╗ ████║██╔══██╗██╔═══╝      \n");
+  printf("██║     ███████║██║   ██║██╔████╔██║██████╔╝    ██║     ███████║███████║██╔████╔██║██████╔╝██████╗      \n");
+  printf("██║     ██╔══██║██║   ██║██╔╝██╔╝██║██╔═══╝     ██║     ██╔══██║██╔══██║██╔╝██╔╝██║██╔═══╝     ██║      \n");
+  printf("╚██████╗██║  ██║╚██████╔╝██║ ╚═╝ ██║██║         ╚██████╗██║  ██║██║  ██║██║ ╚═╝ ██║██║     ██████║      \n");
+  printf(" ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝          ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝     ╚═════╝      \n");
 
   printf("👥 \033[1mPlayers Info:\033[0m\n");
   for (int i = 0; i < state->num_players; i++) {
@@ -111,7 +120,7 @@ void print_board(GameState *state) {
 
       if (!printed) {
         int value = state->board[y * state->width + x];
-        if (value <= 0 && -value < 8) {
+        if (value <= 0 && -value < 9) {
           printf("%s ■  \033[0m", colors[-value]); // Casilla coloreada
         } else if (value > 0) {
           printf(" %2d ", value);
@@ -157,7 +166,7 @@ void print_board(GameState *state) {
   printf(" ✝  Jugador bloqueado\n");
   printf(" ■  Jugador activo\n");
 
-  printf("\n\033[1m====================================\033[0m\n\n");
+  printf("\n\033[1m===================================================================================================\033[0m\n\n");
 }
 
 void check_players_blocked(GameState *state) {
