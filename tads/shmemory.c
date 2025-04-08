@@ -63,13 +63,12 @@ void destroy_sync(GameSync *sync) {
 }
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot) {
-	int fd = shm_open(name, flags, 0666); // Cambiar a O_RDONLY
+	int fd = shm_open(name, flags, 0666);
 	if (fd == -1) {
 		perror("shm_open");
 		exit(EXIT_FAILURE);
 	}
-	void *ptr =
-		mmap(NULL, size, prot, MAP_SHARED, fd, 0); // Cambiar a PROT_READ
+	void *ptr = mmap(NULL, size, prot, MAP_SHARED, fd, 0);
 	if (ptr == MAP_FAILED) {
 		perror("mmap");
 		exit(EXIT_FAILURE);
@@ -161,4 +160,17 @@ void semaphore_pre_print(GameSync *sync) {
 
 void semaphore_post_print(GameSync *sync) {
 	sem_post(&sync->sem_master_ready);
+}
+
+void initialize_pipes(int player_pipes[MAX_PLAYERS][2], int num_players) {
+	for (int i = 0; i < num_players; i++) {
+		if (pipe(player_pipes[i]) == -1) {
+			perror("pipe");
+			for (int j = 0; j < i; j++) {
+				close(player_pipes[j][0]);
+				close(player_pipes[j][1]);
+			}
+			exit(EXIT_FAILURE);
+		}
+	}
 }

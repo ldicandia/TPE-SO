@@ -112,17 +112,11 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < get_num_players(state); i++) {
 		int idx = indices[i];
 		if (i == 0) {
-			// printf(" %s[%s]\033[0m: %d \033[38;5;220mGANADOR 🏆\033[0m\n",
-			//	   colors[idx], state->players[idx].name,
-			//	   state->players[idx].score);
-
 			printf(" %s[%s]\033[0m: %d \033[38;5;220mGANADOR 🏆\033[0m\n",
 				   colors[idx], get_player_name(state, idx),
 				   get_player_score(state, idx));
 		}
 		else {
-			// printf(" %s[%s]\033[0m: %d\n", colors[idx],
-			//	   state->players[idx].name, state->players[idx].score);
 			printf(" %s[%s]\033[0m: %d\n", colors[idx],
 				   get_player_name(state, idx), get_player_score(state, idx));
 		}

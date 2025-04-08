@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define MAX_PLAYERS 9
+
 typedef struct GameSync GameSync;
 
 void *create_shared_memory(const char *name, size_t size);
@@ -50,5 +52,7 @@ void semaphore_pre_print(GameSync *sync);
 void semaphore_post_print(GameSync *sync);
 
 void semaphore_game_over(GameSync *sync);
+
+void initialize_pipes(int player_pipes[MAX_PLAYERS][2], int num_players);
 
 #endif // SHMEMORY_H

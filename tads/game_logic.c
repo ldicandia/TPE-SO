@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
 
 struct Player {
 	char name[16];
@@ -156,4 +158,41 @@ int get_state_value(GameState *state, int x, int y) {
 
 int get_player_pid(GameState *state, int player_idx) {
 	return state->players[player_idx].pid;
+}
+
+/////////////////////////////////////////////////////////
+
+void check_player_timeouts(GameState *state, time_t *last_move_times,
+						   int timeout, int *blocked_players, int num_players) {
+	time_t current_time = time(NULL);
+	for (int i = 0; i < num_players; i++) {
+		if (!is_player_blocked(state, i)) {
+			if (!has_valid_moves(state, i)) {
+				set_player_blocked(state, i, true);
+				(*blocked_players)++;
+			}
+			else if (current_time - last_move_times[i] >= timeout) {
+				set_player_blocked(state, i, true);
+				(*blocked_players)++;
+			}
+		}
+	}
+}
+
+void spawn_players(GameState *state, int player_pipes[MAX_PLAYERS][2],
+				   char *player_paths[], int num_players, char *width_str,
+				   char *height_str, pid_t player_pids[MAX_PLAYERS]) {
+	for (int i = 0; i < num_players; i++) {
+		player_pids[i] = fork();
+		if (player_pids[i] == 0) {
+			dup2(player_pipes[i][1], STDOUT_FILENO);
+			close(player_pipes[i][0]);
+			execl(player_paths[i], player_paths[i], width_str, height_str,
+				  NULL);
+			perror("execl");
+			exit(EXIT_FAILURE);
+		}
+		set_player_pid(state, i + 1, player_pids[i]);
+		close(player_pipes[i][1]);
+	}
 }

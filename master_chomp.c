@@ -43,6 +43,18 @@ void print_parameters(int width, int height, int delay, int timeout,
 					  int num_players);
 void check_results(int num_players, pid_t player_pids[], GameState *state,
 				   pid_t view_pid);
+void read_player_moves(GameState *state, GameSync *sync,
+					   int player_pipes[MAX_PLAYERS][2], fd_set *readfds,
+					   time_t *last_move_times, int *blocked_players,
+					   int num_players, pid_t view_pid);
+void initialize_shared_memory(GameState **state, GameSync **sync, int width,
+							  int height, int num_players, unsigned int seed);
+void cleanup_resources(int player_pipes[MAX_PLAYERS][2], int num_players,
+					   GameState *state, GameSync *sync, pid_t view_pid,
+					   pid_t player_pids[]);
+void game_loop(GameState *state, GameSync *sync,
+			   int player_pipes[MAX_PLAYERS][2], time_t *last_move_times,
+			   int num_players, int timeout, int delay, pid_t view_pid);
 
 int main(int argc, char *argv[]) {
 	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, delay = DEFAULT_DELAY,
@@ -63,34 +75,12 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	GameState *state = create_shared_memory(
-		SHM_GAME_STATE, get_game_state_size() + (width * height * sizeof(int)));
-	GameSync *sync = create_shared_memory(SHM_GAME_SYNC, get_game_sync_size());
+	GameState *state;
+	GameSync *sync;
+	initialize_shared_memory(&state, &sync, width, height, num_players, seed);
 
-	initialize_sync(sync);
-
-	set_width(state, width);
-	set_height(state, height);
-	set_num_players(state, num_players);
-	set_game_over(state, false);
-	set_player_pid(state, 0, getpid());
-	set_player_blocked(state, 0, false);
-
-	initialize_board(state, seed);
-	place_players(state);
-
-	// Create pipes for players
 	int player_pipes[MAX_PLAYERS][2];
-	for (int i = 0; i < num_players; i++) {
-		if (pipe(player_pipes[i]) == -1) {
-			perror("pipe");
-			for (int j = 0; j < i; j++) {
-				close(player_pipes[j][0]);
-				close(player_pipes[j][1]);
-			}
-			exit(EXIT_FAILURE);
-		}
-	}
+	initialize_pipes(player_pipes, num_players);
 
 	char width_str[MAX_STR_LEN], height_str[MAX_STR_LEN];
 	sprintf(width_str, "%d", width);
@@ -99,21 +89,9 @@ int main(int argc, char *argv[]) {
 	pid_t view_pid =
 		view_path ? spawn_process(view_path, width_str, height_str) : 0;
 
-	// Spawn player processes
 	pid_t player_pids[MAX_PLAYERS];
-	for (int i = 0; i < num_players; i++) {
-		player_pids[i] = fork();
-		if (player_pids[i] == 0) {
-			dup2(player_pipes[i][1], STDOUT_FILENO);
-			close(player_pipes[i][0]);
-			execl(player_paths[i], player_paths[i], width_str, height_str,
-				  NULL);
-			perror("execl");
-			exit(EXIT_FAILURE);
-		}
-		set_player_pid(state, i + 1, player_pids[i]);
-		close(player_pipes[i][1]);
-	}
+	spawn_players(state, player_pipes, player_paths, num_players, width_str,
+				  height_str, player_pids);
 
 	time_t *last_move_times = malloc(num_players * sizeof(time_t));
 	if (last_move_times == NULL) {
@@ -121,104 +99,16 @@ int main(int argc, char *argv[]) {
 				"Error: Memory allocation failed for last_move_times.\n");
 		exit(EXIT_FAILURE);
 	}
-
 	for (int i = 0; i < num_players; i++) {
 		last_move_times[i] = time(NULL);
 	}
 
-	fd_set readfds;
-	struct timeval tv;
-	int max_fd = -1;
-	for (int i = 0; i < num_players; i++) {
-		if (player_pipes[i][0] > max_fd)
-			max_fd = player_pipes[i][0];
-	}
-
-	int blocked_players = 0;
-	while (!is_game_over(state)) {
-		time_t current_time = time(NULL);
-
-		// Check for player timeouts
-		for (int i = 0; i < num_players; i++) {
-			if (!is_player_blocked(state, i)) {
-				if (!has_valid_moves(state, i)) {
-					set_player_blocked(state, i, true);
-					blocked_players++;
-				}
-				else if (current_time - last_move_times[i] >= timeout) {
-					set_player_blocked(state, i, true);
-					blocked_players++;
-				}
-			}
-		}
-
-		if (blocked_players == num_players) {
-			set_game_over(state, true);
-			if (view_pid) {
-				semaphore_to_view(sync);
-			}
-		}
-
-		// Read moves from players
-		FD_ZERO(&readfds);
-		for (int i = 0; i < num_players; i++) {
-			if (!is_player_blocked(state, i)) {
-				FD_SET(player_pipes[i][0], &readfds);
-			}
-		}
-
-		tv.tv_sec  = 0;
-		tv.tv_usec = TIMEOUT_CHECK_INTERVAL;
-
-		int ready = select(max_fd + 1, &readfds, NULL, NULL, &tv);
-		if (ready == -1) {
-			perror("select");
-			break;
-		}
-
-		for (int i = 0; i < num_players; i++) {
-			if (!is_player_blocked(state, i) &&
-				FD_ISSET(player_pipes[i][0], &readfds)) {
-				unsigned char move;
-				ssize_t bytes_read =
-					read(player_pipes[i][0], &move, sizeof(move));
-				if (bytes_read <= 0) {
-					set_player_blocked(state, i, true);
-					blocked_players++;
-				}
-				else {
-					semaphore_wait_mutex(sync);
-					process_move(state, i, move);
-
-					semaphore_post_game_mutex(sync);
-					if (view_pid) {
-						semaphore_to_view(sync);
-					}
-					semaphore_post_state_state(sync);
-
-					last_move_times[i] = time(NULL);
-				}
-			}
-		}
-
-		if (view_pid) {
-			usleep(delay * 1000);
-		}
-	}
+	game_loop(state, sync, player_pipes, last_move_times, num_players, timeout,
+			  delay, view_pid);
 
 	free(last_move_times);
-
-	// Cleanup
-	for (int i = 0; i < num_players; i++) {
-		close(player_pipes[i][0]);
-	}
-
-	check_results(num_players, player_pids, state, view_pid);
-
-	destroy_sync(sync);
-	destroy_shared_memory(SHM_GAME_STATE, state,
-						  get_game_state_size(width, height));
-	destroy_shared_memory(SHM_GAME_SYNC, sync, get_game_sync_size());
+	cleanup_resources(player_pipes, num_players, state, sync, view_pid,
+					  player_pids);
 
 	return 0;
 }
@@ -338,5 +228,115 @@ void print_parameters(int width, int height, int delay, int timeout,
 	printf("Player paths:\n");
 	for (int i = 0; i < num_players; i++) {
 		printf("  %s\n", player_paths[i]);
+	}
+}
+
+void read_player_moves(GameState *state, GameSync *sync,
+					   int player_pipes[MAX_PLAYERS][2], fd_set *readfds,
+					   time_t *last_move_times, int *blocked_players,
+					   int num_players, pid_t view_pid) {
+	for (int i = 0; i < num_players; i++) {
+		if (!is_player_blocked(state, i) &&
+			FD_ISSET(player_pipes[i][0], readfds)) {
+			unsigned char move;
+			ssize_t bytes_read = read(player_pipes[i][0], &move, sizeof(move));
+			if (bytes_read <= 0) {
+				set_player_blocked(state, i, true);
+				(*blocked_players)++;
+			}
+			else {
+				semaphore_wait_mutex(sync);
+				process_move(state, i, move);
+
+				semaphore_post_game_mutex(sync);
+				if (view_pid) {
+					semaphore_to_view(sync);
+				}
+				semaphore_post_state_state(sync);
+
+				last_move_times[i] = time(NULL);
+			}
+		}
+	}
+}
+
+void initialize_shared_memory(GameState **state, GameSync **sync, int width,
+							  int height, int num_players, unsigned int seed) {
+	*state = create_shared_memory(
+		SHM_GAME_STATE, get_game_state_size() + (width * height * sizeof(int)));
+	*sync = create_shared_memory(SHM_GAME_SYNC, get_game_sync_size());
+
+	initialize_sync(*sync);
+
+	set_width(*state, width);
+	set_height(*state, height);
+	set_num_players(*state, num_players);
+	set_game_over(*state, false);
+	set_player_pid(*state, 0, getpid());
+	set_player_blocked(*state, 0, false);
+
+	initialize_board(*state, seed);
+	place_players(*state);
+}
+
+void cleanup_resources(int player_pipes[MAX_PLAYERS][2], int num_players,
+					   GameState *state, GameSync *sync, pid_t view_pid,
+					   pid_t player_pids[]) {
+	for (int i = 0; i < num_players; i++) {
+		close(player_pipes[i][0]);
+	}
+
+	check_results(num_players, player_pids, state, view_pid);
+
+	destroy_sync(sync);
+	destroy_shared_memory(SHM_GAME_STATE, state, get_game_state_size());
+	destroy_shared_memory(SHM_GAME_SYNC, sync, get_game_sync_size());
+}
+
+void game_loop(GameState *state, GameSync *sync,
+			   int player_pipes[MAX_PLAYERS][2], time_t *last_move_times,
+			   int num_players, int timeout, int delay, pid_t view_pid) {
+	fd_set readfds;
+	struct timeval tv;
+	int max_fd = -1;
+	for (int i = 0; i < num_players; i++) {
+		if (player_pipes[i][0] > max_fd)
+			max_fd = player_pipes[i][0];
+	}
+
+	int blocked_players = 0;
+	while (!is_game_over(state)) {
+		check_player_timeouts(state, last_move_times, timeout, &blocked_players,
+							  num_players);
+
+		if (blocked_players == num_players) {
+			set_game_over(state, true);
+			if (view_pid) {
+				semaphore_to_view(sync);
+			}
+		}
+
+		FD_ZERO(&readfds);
+		for (int i = 0; i < num_players; i++) {
+			if (!is_player_blocked(state, i)) {
+				FD_SET(player_pipes[i][0], &readfds);
+			}
+		}
+
+		tv.tv_sec  = 0;
+		tv.tv_usec = TIMEOUT_CHECK_INTERVAL;
+
+		int ready = select(max_fd + 1, &readfds, NULL, NULL, &tv);
+		if (ready == -1) {
+			perror("select");
+			break;
+		}
+
+		read_player_moves(state, sync, player_pipes, &readfds, last_move_times,
+						  &blocked_players, num_players, view_pid);
+
+		if (view_pid) {
+			usleep(delay * 1000);
+		}
 	}
 }
