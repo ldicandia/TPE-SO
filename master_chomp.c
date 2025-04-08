@@ -45,9 +45,6 @@ void check_results(int num_players, pid_t player_pids[], GameState *state,
 				   pid_t view_pid);
 
 int main(int argc, char *argv[]) {
-	printf("Master Chomp PID: %d\n", getpid());
-	sleep(5);
-
 	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, delay = DEFAULT_DELAY,
 		timeout		  = DEFAULT_TIMEOUT;
 	unsigned int seed = time(NULL);
