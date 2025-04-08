@@ -28,16 +28,16 @@ int main(int argc, char *argv[]) {
 	unsigned int seed = time(NULL);
 	char *view_path	  = NULL;
 	char *player_paths[MAX_PLAYERS];
-	int num_players = 0;
+	int num_players	  = 0;
+	bool param_failed = false;
 
 	parse_arguments(argc, argv, &width, &height, &delay, &timeout, &seed,
 					&view_path, player_paths, &num_players);
 	print_parameters(width, height, delay, timeout, seed, view_path,
 					 player_paths, num_players);
 
-	if (num_players < 1 || num_players > MAX_PLAYERS) {
-		fprintf(stderr, "Error: Number of players must be between 1 and %d\n",
-				MAX_PLAYERS);
+	if (param_failed) {
+		fprintf(stderr, "Error: Invalid parameters.\n");
 		exit(EXIT_FAILURE);
 	}
 

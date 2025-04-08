@@ -47,9 +47,20 @@ void parse_arguments(int argc, char *argv[], int *width, int *height,
 				*view_path = optarg;
 				break;
 			case 'p':
-				optind--;
-				while (optind < argc && *num_players < MAX_PLAYERS &&
-					   argv[optind][0] != '-') {
+				optind--; // Step back to process the current argument
+				while (optind < argc && argv[optind][0] != '-') {
+					if (*num_players >= MAX_PLAYERS) { // Use >= for clarity
+						fprintf(stderr,
+								"Error: maximum number of players is %d.\n",
+								MAX_PLAYERS);
+						exit(EXIT_FAILURE);
+					}
+					if (argv[optind] == NULL ||
+						strlen(argv[optind]) == 0) { // Validate path
+						fprintf(stderr,
+								"Error: invalid player path provided.\n");
+						exit(EXIT_FAILURE);
+					}
 					player_paths[(*num_players)++] = argv[optind++];
 				}
 				break;
