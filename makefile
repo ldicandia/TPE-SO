@@ -62,7 +62,7 @@ clean:
 
 # Ejecutar ChompChamps
 run: all
-	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) -v $(VIEW) -d 50
+	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) -v $(VIEW) -d 50
 
 # Test the executables
 test: all
@@ -79,6 +79,10 @@ test: all
 	@sleep 3
 	@valgrind --leak-check=full --show-leak-kinds=all ./$(MASTER) -w 25 -h 25 -t 15 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 50 || RET5=$$?
 	@sleep 3
+	@./$(MASTER) -w 5 -h 5 -t 2 -p $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER) $(PLAYER)  -d 50 
+	@./$(MASTER) -w 5 -h 5 -t 2 -d 50 
+
+
 	@echo "All tests completed."
 	@echo "Test Results:"
 	@echo "master_chomp test 1 exit code: $$RET1"

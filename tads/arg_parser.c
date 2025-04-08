@@ -73,6 +73,10 @@ void parse_arguments(int argc, char *argv[], int *width, int *height,
 				exit(EXIT_FAILURE);
 		}
 	}
+	if (*num_players == 0) {
+		fprintf(stderr, "Error: at least one player path must be provided.\n");
+		exit(EXIT_FAILURE);
+	}
 }
 
 void print_parameters(int width, int height, int delay, int timeout,
