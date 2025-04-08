@@ -28,36 +28,22 @@ int main(int argc, char *argv[]) {
 
 	srand(getpid());
 
-	GameState *state = attach_shared_memory(SHM_GAME_STATE, sizeof(GameState),
-											O_RDONLY, PROT_READ);
-	GameSync *sync	 = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync),
-											O_RDWR, PROT_READ | PROT_WRITE);
+	GameState *state = attach_shared_memory(
+		SHM_GAME_STATE, get_game_state_size(), O_RDWR, PROT_READ | PROT_WRITE);
+	GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, get_game_sync_size(),
+										  O_RDWR, PROT_READ | PROT_WRITE);
 
-	while (!state->game_over) {
+	while (!is_game_over(state)) {
 		usleep(200000);
 
-		sem_wait(&sync->sem_game_mutex);
-		sem_post(&sync->sem_game_mutex);
-
-		sem_wait(&sync->sem_state_mutex);
-		if (sync->reader_count++ == 0) {
-			sem_wait(&sync->sem_game_mutex);
-		}
-		sem_post(&sync->sem_state_mutex);
-
+		semaphore_pre_move(sync);
 		unsigned char move = choose_random_move();
 		write(STDOUT_FILENO, &move, sizeof(move));
-
-		sem_wait(&sync->sem_state_mutex);
-		if (--sync->reader_count == 0) {
-			sem_post(&sync->sem_game_mutex);
-		}
-		sem_post(&sync->sem_state_mutex);
-
-		sem_post(&sync->sem_game_mutex);
+		semaphore_post_move(sync);
 	}
-	detach_shared_memory(state, sizeof(GameState));
-	detach_shared_memory(sync, sizeof(GameSync));
+
+	detach_shared_memory(state, get_game_state_size());
+	detach_shared_memory(sync, get_game_sync_size());
 	return 0;
 }
 

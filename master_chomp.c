@@ -63,18 +63,19 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
-	GameState *state = create_shared_memory(SHM_GAME_STATE, game_state_size);
-	GameSync *sync	 = create_shared_memory(SHM_GAME_SYNC, sizeof(GameSync));
+	GameState *state = create_shared_memory(
+		SHM_GAME_STATE, get_game_state_size() + (width * height * sizeof(int)));
+	GameSync *sync = create_shared_memory(SHM_GAME_SYNC, get_game_sync_size());
 
-	initialize_sync(&sync->sem_view_ready, &sync->sem_master_ready,
-					&sync->sem_state_mutex, &sync->sem_game_mutex,
-					&sync->sem_reader_mutex, &sync->reader_count);
+	initialize_sync(sync);
 
-	state->width	   = width;
-	state->height	   = height;
-	state->num_players = num_players;
-	state->game_over   = false;
+	set_width(state, width);
+	set_height(state, height);
+	set_num_players(state, num_players);
+	set_game_over(state, false);
+	set_player_pid(state, 0, getpid());
+	set_player_blocked(state, 0, false);
+
 	initialize_board(state, seed);
 	place_players(state);
 
@@ -110,7 +111,7 @@ int main(int argc, char *argv[]) {
 			perror("execl");
 			exit(EXIT_FAILURE);
 		}
-		state->players[i].pid = player_pids[i];
+		set_player_pid(state, i + 1, player_pids[i]);
 		close(player_pipes[i][1]);
 	}
 
@@ -134,35 +135,34 @@ int main(int argc, char *argv[]) {
 	}
 
 	int blocked_players = 0;
-	while (!state->game_over) {
+	while (!is_game_over(state)) {
 		time_t current_time = time(NULL);
 
 		// Check for player timeouts
 		for (int i = 0; i < num_players; i++) {
-			if (!state->players[i].blocked) {
+			if (!is_player_blocked(state, i)) {
 				if (!has_valid_moves(state, i)) {
-					state->players[i].blocked = true;
+					set_player_blocked(state, i, true);
 					blocked_players++;
 				}
 				else if (current_time - last_move_times[i] >= timeout) {
-					state->players[i].blocked = true;
+					set_player_blocked(state, i, true);
 					blocked_players++;
 				}
 			}
 		}
 
 		if (blocked_players == num_players) {
-			state->game_over = true;
+			set_game_over(state, true);
 			if (view_pid) {
-				sem_post(&sync->sem_view_ready);
-				sem_wait(&sync->sem_master_ready);
+				semaphore_to_view(sync);
 			}
 		}
 
 		// Read moves from players
 		FD_ZERO(&readfds);
 		for (int i = 0; i < num_players; i++) {
-			if (!state->players[i].blocked) {
+			if (!is_player_blocked(state, i)) {
 				FD_SET(player_pipes[i][0], &readfds);
 			}
 		}
@@ -177,27 +177,24 @@ int main(int argc, char *argv[]) {
 		}
 
 		for (int i = 0; i < num_players; i++) {
-			if (!state->players[i].blocked &&
+			if (!is_player_blocked(state, i) &&
 				FD_ISSET(player_pipes[i][0], &readfds)) {
 				unsigned char move;
 				ssize_t bytes_read =
 					read(player_pipes[i][0], &move, sizeof(move));
 				if (bytes_read <= 0) {
-					state->players[i].blocked = true;
+					set_player_blocked(state, i, true);
 					blocked_players++;
 				}
 				else {
-					sem_wait(&sync->sem_state_mutex);
-					sem_wait(&sync->sem_game_mutex);
-
+					semaphore_wait_mutex(sync);
 					process_move(state, i, move);
 
-					sem_post(&sync->sem_game_mutex);
+					semaphore_post_game_mutex(sync);
 					if (view_pid) {
-						sem_post(&sync->sem_view_ready);
-						sem_wait(&sync->sem_master_ready);
+						semaphore_to_view(sync);
 					}
-					sem_post(&sync->sem_state_mutex);
+					semaphore_post_state_state(sync);
 
 					last_move_times[i] = time(NULL);
 				}
@@ -218,11 +215,10 @@ int main(int argc, char *argv[]) {
 
 	check_results(num_players, player_pids, state, view_pid);
 
-	destroy_sync(&sync->sem_view_ready, &sync->sem_master_ready,
-				 &sync->sem_state_mutex, &sync->sem_game_mutex,
-				 &sync->sem_reader_mutex);
-	destroy_shared_memory(SHM_GAME_STATE, state, game_state_size);
-	destroy_shared_memory(SHM_GAME_SYNC, sync, sizeof(GameSync));
+	destroy_sync(sync);
+	destroy_shared_memory(SHM_GAME_STATE, state,
+						  get_game_state_size(width, height));
+	destroy_shared_memory(SHM_GAME_SYNC, sync, get_game_sync_size());
 
 	return 0;
 }
@@ -245,7 +241,7 @@ void check_results(int num_players, pid_t player_pids[], GameState *state,
 		if (WIFEXITED(status)) {
 			printf("Player %d (PID: %d)|| Exit status %d || Score = %u\n",
 				   i + 1, player_pids[i], WEXITSTATUS(status),
-				   state->players[i].score);
+				   get_player_score(state, i));
 		}
 		else if (WIFSIGNALED(status)) {
 			printf("Player %d (PID: %d)|| Killed by signal %d\n", i + 1,

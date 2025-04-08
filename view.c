@@ -58,21 +58,22 @@ int main(int argc, char *argv[]) {
 	int width  = atoi(argv[1]);
 	int height = atoi(argv[2]);
 
-	size_t game_state_size = sizeof(GameState) + width * height * sizeof(int);
+	size_t game_state_size =
+		get_game_state_size() + width * height * sizeof(int);
 
 	GameState *state = attach_shared_memory(SHM_GAME_STATE, game_state_size,
 											O_RDONLY, PROT_READ);
-	GameSync *sync	 = attach_shared_memory(SHM_GAME_SYNC, sizeof(GameSync),
+	GameSync *sync	 = attach_shared_memory(SHM_GAME_SYNC, get_game_sync_size(),
 											O_RDWR, PROT_READ | PROT_WRITE);
 
 	while (true) {
-		if (state->game_over) {
-			sem_post(&sync->sem_master_ready);
+		if (is_game_over(state)) {
+			semaphore_game_over(sync);
 			break;
 		}
-		sem_wait(&sync->sem_view_ready);
+		semaphore_pre_print(sync);
 		print_board(state);
-		sem_post(&sync->sem_master_ready);
+		semaphore_post_print(sync);
 	}
 
 	system("clear");
@@ -93,14 +94,14 @@ int main(int argc, char *argv[]) {
 	printf("\n🏆 \033[1mPuntajes:\033[0m\n");
 
 	int indices[8];
-	for (int i = 0; i < state->num_players; i++)
+	for (int i = 0; i < get_num_players(state); i++)
 		indices[i] = i;
 
 	// Ordenar por puntaje
-	for (int i = 0; i < state->num_players - 1; i++) {
-		for (int j = 0; j < state->num_players - i - 1; j++) {
-			if (state->players[indices[j]].score <
-				state->players[indices[j + 1]].score) {
+	for (int i = 0; i < get_num_players(state) - 1; i++) {
+		for (int j = 0; j < get_num_players(state) - i - 1; j++) {
+			if (get_player_score(state, indices[j]) <
+				get_player_score(state, indices[j + 1])) {
 				int temp	   = indices[j];
 				indices[j]	   = indices[j + 1];
 				indices[j + 1] = temp;
@@ -108,16 +109,22 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	for (int i = 0; i < state->num_players; i++) {
+	for (int i = 0; i < get_num_players(state); i++) {
 		int idx = indices[i];
 		if (i == 0) {
+			// printf(" %s[%s]\033[0m: %d \033[38;5;220mGANADOR 🏆\033[0m\n",
+			//	   colors[idx], state->players[idx].name,
+			//	   state->players[idx].score);
+
 			printf(" %s[%s]\033[0m: %d \033[38;5;220mGANADOR 🏆\033[0m\n",
-				   colors[idx], state->players[idx].name,
-				   state->players[idx].score);
+				   colors[idx], get_player_name(state, idx),
+				   get_player_score(state, idx));
 		}
 		else {
+			// printf(" %s[%s]\033[0m: %d\n", colors[idx],
+			//	   state->players[idx].name, state->players[idx].score);
 			printf(" %s[%s]\033[0m: %d\n", colors[idx],
-				   state->players[idx].name, state->players[idx].score);
+				   get_player_name(state, idx), get_player_score(state, idx));
 		}
 	}
 
@@ -144,36 +151,37 @@ void print_board(GameState *state) {
 		   "╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝     ╚═════╝      \033[0m\n");
 
 	printf("👥 \033[1mPlayers Info:\033[0m\n");
-	for (int i = 0; i < state->num_players; i++) {
+	for (int i = 0; i < get_num_players(state); i++) {
 		const char *status =
-			state->players[i].blocked ? "🚫 Bloqueado" : "✅ Activo";
+			is_player_blocked(state, i) ? "🚫 Bloqueado" : "✅ Activo";
 		printf("%s[%s]\033[0m %s - Pos: (%d,%d)\n", colors[i],
-			   state->players[i].name, status, state->players[i].x,
-			   state->players[i].y);
+			   get_player_name(state, i), status, get_player_x(state, i),
+			   get_player_y(state, i));
 	}
 
-	printf("\n🧩 \033[1mBoard (%dx%d):\033[0m\n\n", state->width,
-		   state->height);
+	printf("\n🧩 \033[1mBoard (%dx%d):\033[0m\n\n", get_width(state),
+		   get_height(state));
 
 	printf("    ");
-	for (int x = 0; x < state->width; x++) {
+	for (int x = 0; x < get_width(state); x++) {
 		printf(" %2d ", x);
 	}
 	printf("\n");
 
 	printf("   ");
-	for (int x = 0; x < state->width; x++) {
+	for (int x = 0; x < get_width(state); x++) {
 		printf("────");
 	}
 	printf("─\n");
 
-	for (int y = 0; y < state->height; y++) {
+	for (int y = 0; y < get_height(state); y++) {
 		printf(" %2d│", y);
-		for (int x = 0; x < state->width; x++) {
+		for (int x = 0; x < get_width(state); x++) {
 			bool printed = false;
-			for (int i = 0; i < state->num_players; i++) {
-				if (state->players[i].x == x && state->players[i].y == y) {
-					if (state->players[i].blocked) {
+			for (int i = 0; i < get_num_players(state); i++) {
+				if (get_player_x(state, i) == x &&
+					get_player_y(state, i) == y) {
+					if (is_player_blocked(state, i)) {
 						printf("%s ✝  \033[0m", dark_colors[i]);
 					}
 					else {
@@ -185,7 +193,8 @@ void print_board(GameState *state) {
 			}
 
 			if (!printed) {
-				int value = state->board[y * state->width + x];
+				int value = get_state_value(state, x, y);
+
 				if (value <= 0 && -value < 9) {
 					printf("%s ■  \033[0m",
 						   colors[-value]); // Casilla coloreada
@@ -202,7 +211,7 @@ void print_board(GameState *state) {
 	}
 
 	printf("    ");
-	for (int x = 0; x < state->width; x++) {
+	for (int x = 0; x < get_width(state); x++) {
 		printf("────");
 	}
 	printf("─\n");
@@ -210,25 +219,28 @@ void print_board(GameState *state) {
 	printf("\n🏆 \033[1mPuntajes:\033[0m\n");
 
 	int indices[8];
-	for (int i = 0; i < state->num_players; i++)
+	for (int i = 0; i < get_num_players(state); i++)
 		indices[i] = i;
 
 	// Ordenar por puntaje
-	for (int i = 0; i < state->num_players - 1; i++) {
-		for (int j = 0; j < state->num_players - i - 1; j++) {
-			if (state->players[indices[j]].score <
-				state->players[indices[j + 1]].score) {
-				int temp	   = indices[j];
-				indices[j]	   = indices[j + 1];
-				indices[j + 1] = temp;
+	for (int i = 0; i < get_num_players(state) - 1; i++) {
+		for (int j = 0; j < get_num_players(state) - i - 1; j++) {
+			if (get_player_score(state, indices[j]) <
+				get_player_score(state, indices[j + 1])) {
+				if (get_player_pid(state, indices[j]) <
+					get_player_pid(state, indices[j + 1])) {
+					int temp	   = indices[j];
+					indices[j]	   = indices[j + 1];
+					indices[j + 1] = temp;
+				}
 			}
 		}
 	}
 
-	for (int i = 0; i < state->num_players; i++) {
+	for (int i = 0; i < get_num_players(state); i++) {
 		int idx = indices[i];
-		printf(" %s[%s]\033[0m: %d\n", colors[idx], state->players[idx].name,
-			   state->players[idx].score);
+		printf(" %s[%s]\033[0m: %d\n", colors[idx], get_player_name(state, idx),
+			   get_player_score(state, idx));
 	}
 
 	// Leyenda
@@ -243,14 +255,14 @@ void print_board(GameState *state) {
 
 void check_players_blocked(GameState *state) {
 	bool all_blocked = true;
-	for (int i = 0; i < state->num_players; i++) {
-		if (!state->players[i].blocked) {
+	for (int i = 0; i < get_num_players(state); i++) {
+		if (!is_player_blocked(state, i)) {
 			all_blocked = false;
 			break;
 		}
 	}
 
 	if (all_blocked) {
-		state->game_over = true;
+		set_game_over(state, true);
 	}
 }

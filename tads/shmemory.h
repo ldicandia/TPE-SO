@@ -5,31 +5,50 @@
 #include <sys/types.h>
 #include <stddef.h>
 #include <time.h>
-// Definición de la estructura GameSync
-typedef struct {
-	sem_t sem_view_ready;	// Se usa para indicarle a la vista que hay cambios
-							// por imprimir
-	sem_t sem_master_ready; // Se usa para indicarle al master que la vista
-							// terminó de imprimir
-	sem_t sem_state_mutex;	// Mutex para evitar inanición del master al acceder
-							// al estado
-	sem_t sem_game_mutex;	// Mutex para el estado del juego
-	sem_t sem_reader_mutex; // Mutex para la siguiente variable
-	unsigned int reader_count; // Cantidad de jugadores leyendo el estado
-} GameSync;
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+typedef struct GameSync GameSync;
 
 void *create_shared_memory(const char *name, size_t size);
 void destroy_shared_memory(const char *name, void *ptr, size_t size);
 
-void initialize_sync(sem_t *sem_view_ready, sem_t *sem_master_ready,
-					 sem_t *sem_state_mutex, sem_t *sem_game_mutex,
-					 sem_t *sem_reader_mutex, unsigned int *reader_count);
-void destroy_sync(sem_t *sem_view_ready, sem_t *sem_master_ready,
-				  sem_t *sem_state_mutex, sem_t *sem_game_mutex,
-				  sem_t *sem_reader_mutex);
+void initialize_sync(GameSync *sync);
+void destroy_sync(GameSync *sync);
 void detach_shared_memory(void *ptr, size_t size);
 
 void *attach_shared_memory(const char *name, size_t size, int flags, int prot);
 void detach_shared_memory(void *ptr, size_t size);
+
+void semaphore_wait(sem_t *sem);
+
+void semaphore_post(sem_t *sem);
+
+bool is_reader_count_zero(GameSync *sync);
+
+void increment_reader_count(GameSync *sync);
+
+void decrement_reader_count(GameSync *sync);
+
+size_t get_game_sync_size(void);
+
+void semaphore_to_view(GameSync *sync);
+
+void semaphore_wait_mutex(GameSync *sync);
+
+void semaphore_post_game_mutex(GameSync *sync);
+
+void semaphore_post_state_state(GameSync *sync);
+
+void semaphore_pre_move(GameSync *sync);
+
+void semaphore_post_move(GameSync *sync);
+
+void semaphore_pre_print(GameSync *sync);
+
+void semaphore_post_print(GameSync *sync);
+
+void semaphore_game_over(GameSync *sync);
 
 #endif // SHMEMORY_H

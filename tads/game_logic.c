@@ -8,6 +8,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct Player {
+	char name[16];
+	unsigned int score;
+	unsigned int invalid_moves;
+	unsigned int valid_moves;
+	unsigned short x, y;
+	pid_t pid;
+	bool blocked;
+};
+
+struct GameState {
+	unsigned short width;
+	unsigned short height;
+	unsigned int num_players;
+	Player players[MAX_PLAYERS];
+	bool game_over;
+	int board[];
+};
+
 void initialize_board(GameState *state, unsigned int seed) {
 	srand(seed);
 	for (int i = 0; i < state->width * state->height; i++) {
@@ -24,7 +43,7 @@ void place_players(GameState *state) {
 		state->players[i].invalid_moves = 0;
 		state->players[i].valid_moves	= 0;
 		state->players[i].blocked		= false;
-		snprintf(state->players[i].name, 16, "Player%d", i + 1);
+		snprintf(state->players[i].name, 17, "Player%d", i + 1);
 	}
 }
 
@@ -65,4 +84,76 @@ void process_move(GameState *state, int player_idx, unsigned char move) {
 		state->board[new_y * state->width + new_x] =
 			0 - player_idx; // Cell consumed
 	}
+}
+
+size_t get_game_state_size() {
+	return sizeof(GameState);
+}
+
+void set_width(GameState *state, int width) {
+	state->width = width;
+}
+
+void set_height(GameState *state, int height) {
+	state->height = height;
+}
+
+void set_num_players(GameState *state, int num_players) {
+	state->num_players = num_players;
+}
+
+void set_game_over(GameState *state, bool game_over) {
+	state->game_over = game_over;
+}
+
+void set_player_pid(GameState *state, int player_idx, pid_t pid) {
+	state->players[player_idx].pid = pid;
+}
+
+bool is_game_over(GameState *state) {
+	return state->game_over;
+}
+
+bool is_player_blocked(GameState *state, int player_idx) {
+	return state->players[player_idx].blocked;
+}
+
+void set_player_blocked(GameState *state, int player_idx, bool blocked) {
+	state->players[player_idx].blocked = blocked;
+}
+
+int get_player_score(GameState *state, int player_idx) {
+	return state->players[player_idx].score;
+}
+
+int get_num_players(GameState *state) {
+	return state->num_players;
+}
+
+char *get_player_name(GameState *state, int player_idx) {
+	return state->players[player_idx].name;
+}
+
+int get_player_x(GameState *state, int player_idx) {
+	return state->players[player_idx].x;
+}
+
+int get_player_y(GameState *state, int player_idx) {
+	return state->players[player_idx].y;
+}
+
+int get_width(GameState *state) {
+	return state->width;
+}
+
+int get_height(GameState *state) {
+	return state->height;
+}
+
+int get_state_value(GameState *state, int x, int y) {
+	return state->board[y * state->width + x];
+}
+
+int get_player_pid(GameState *state, int player_idx) {
+	return state->players[player_idx].pid;
 }
