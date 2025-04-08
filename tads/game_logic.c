@@ -190,7 +190,7 @@ void spawn_players(GameState *state, int player_pipes[MAX_PLAYERS][2],
 			perror("execl");
 			exit(EXIT_FAILURE);
 		}
-		set_player_pid(state, i + 1, player_pids[i]);
+		set_player_pid(state, i, player_pids[i]);
 		close(player_pipes[i][1]);
 	}
 }
