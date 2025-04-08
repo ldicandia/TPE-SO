@@ -268,6 +268,8 @@ void check_results(int num_players, pid_t player_pids[], GameState *state,
 		waitpid(view_pid, &status, 0);
 		printf("View (PID %d) exited with status %d\n", view_pid, status);
 	}
+
+	printf("Master Chomp PID: %d\n", getpid());
 }
 
 void parse_arguments(int argc, char *argv[], int *width, int *height,
