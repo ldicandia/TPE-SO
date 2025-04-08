@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 					&view_path, player_paths, &num_players);
 	print_parameters(width, height, delay, timeout, seed, view_path,
 					 player_paths, num_players);
-	sleep(1); // Sleep to allow the user to read the parameters
+	sleep(1);
 
 	GameState *state;
 	GameSync *sync;
