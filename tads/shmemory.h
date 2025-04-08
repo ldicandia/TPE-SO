@@ -2,7 +2,9 @@
 #define SHMEMORY_H
 
 #include <semaphore.h>
+#include <sys/types.h>
 #include <stddef.h>
+#include <time.h>
 // Definición de la estructura GameSync
 typedef struct {
 	sem_t sem_view_ready;	// Se usa para indicarle a la vista que hay cambios

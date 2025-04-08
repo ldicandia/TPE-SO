@@ -5,3 +5,10 @@
 master_chomp
 player
 view
+
+pvs-studio-latest.tgz
+PVS-Studio.log
+report.tasks
+strace_out
+
+pvs-studio

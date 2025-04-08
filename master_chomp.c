@@ -1,3 +1,7 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <fcntl.h>
 #include <getopt.h>
 #include <semaphore.h>
@@ -41,6 +45,9 @@ void check_results(int num_players, pid_t player_pids[], GameState *state,
 				   pid_t view_pid);
 
 int main(int argc, char *argv[]) {
+	printf("Master Chomp PID: %d\n", getpid());
+	sleep(5);
+
 	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, delay = DEFAULT_DELAY,
 		timeout		  = DEFAULT_TIMEOUT;
 	unsigned int seed = time(NULL);
@@ -111,6 +118,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	time_t *last_move_times = malloc(num_players * sizeof(time_t));
+	if (last_move_times == NULL) {
+		fprintf(stderr,
+				"Error: Memory allocation failed for last_move_times.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	for (int i = 0; i < num_players; i++) {
 		last_move_times[i] = time(NULL);
 	}
@@ -233,19 +246,20 @@ void check_results(int num_players, pid_t player_pids[], GameState *state,
 		int status;
 		waitpid(player_pids[i], &status, 0);
 		if (WIFEXITED(status)) {
-			printf("Player %d || Exit status %d || Score = %d\n", i + 1,
-				   WEXITSTATUS(status), state->players[i].score);
+			printf("Player %d (PID: %d)|| Exit status %d || Score = %u\n",
+				   i + 1, player_pids[i], WEXITSTATUS(status),
+				   state->players[i].score);
 		}
 		else if (WIFSIGNALED(status)) {
-			printf("Player %d || Killed by signal %d\n", i + 1,
-				   WTERMSIG(status));
+			printf("Player %d (PID: %d)|| Killed by signal %d\n", i + 1,
+				   player_pids[i], WTERMSIG(status));
 		}
 		else if (WIFSTOPPED(status)) {
-			printf("Player %d || Stopped by signal %d\n", i + 1,
-				   WSTOPSIG(status));
+			printf("Player %d (PID: %d)|| Stopped by signal %d\n", i + 1,
+				   player_pids[i], WSTOPSIG(status));
 		}
 		else {
-			printf("Player %d || Unknown status\n", i);
+			printf("Player %d (PID: %d)|| Unknown status\n", i, player_pids[i]);
 		}
 	}
 
