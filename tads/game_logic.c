@@ -160,8 +160,6 @@ int get_player_pid(GameState *state, int player_idx) {
 	return state->players[player_idx].pid;
 }
 
-/////////////////////////////////////////////////////////
-
 void check_player_timeouts(GameState *state, time_t *last_move_times,
 						   int timeout, int *blocked_players, int num_players) {
 	time_t current_time = time(NULL);

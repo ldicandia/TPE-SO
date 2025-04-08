@@ -17,6 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "tads/arg_parser.h"
 #include "tads/game_logic.h"
 #include "tads/shmemory.h"
 
@@ -35,12 +36,6 @@
 #define MAX_STR_LEN 10
 
 pid_t spawn_process(const char *path, char *width, char *height);
-void parse_arguments(int argc, char *argv[], int *width, int *height,
-					 int *delay, int *timeout, unsigned int *seed,
-					 char **view_path, char *player_paths[], int *num_players);
-void print_parameters(int width, int height, int delay, int timeout,
-					  unsigned int seed, char *view_path, char *player_paths[],
-					  int num_players);
 void check_results(int num_players, pid_t player_pids[], GameState *state,
 				   pid_t view_pid);
 void read_player_moves(GameState *state, GameSync *sync,
@@ -153,82 +148,6 @@ void check_results(int num_players, pid_t player_pids[], GameState *state,
 	}
 
 	printf("Master Chomp PID: %d\n", getpid());
-}
-
-void parse_arguments(int argc, char *argv[], int *width, int *height,
-					 int *delay, int *timeout, unsigned int *seed,
-					 char **view_path, char *player_paths[], int *num_players) {
-	int opt;
-	while ((opt = getopt(argc, argv, "w:h:d:t:s:v:p:")) != -1) {
-		switch (opt) {
-			case 'w':
-				*width = atoi(optarg);
-				if (*width < MIN_WIDTH) {
-					fprintf(stderr, "Error: minimum width must be %d.\n",
-							MIN_WIDTH);
-					exit(EXIT_FAILURE);
-				}
-				break;
-			case 'h':
-				*height = atoi(optarg);
-				if (*height < MIN_HEIGHT) {
-					fprintf(stderr, "Error: minimum height must be %d.\n",
-							MIN_HEIGHT);
-					exit(EXIT_FAILURE);
-				}
-				break;
-			case 'd':
-				*delay = atoi(optarg);
-				if (*delay < MIN_DELAY) {
-					fprintf(stderr, "Error: delay must be non-negative.\n");
-					exit(EXIT_FAILURE);
-				}
-				break;
-			case 't':
-				*timeout = atoi(optarg);
-				if (*timeout < MIN_TIMEOUT) {
-					fprintf(stderr, "Error: timeout must be non-negative.\n");
-					exit(EXIT_FAILURE);
-				}
-				break;
-			case 's':
-				*seed = atoi(optarg);
-				break;
-			case 'v':
-				*view_path = optarg;
-				break;
-			case 'p':
-				optind--;
-				while (optind < argc && *num_players < MAX_PLAYERS &&
-					   argv[optind][0] != '-') {
-					player_paths[(*num_players)++] = argv[optind++];
-				}
-				break;
-			default:
-				fprintf(stderr,
-						"Usage: %s [-w width] [-h height] [-d delay] [-t "
-						"timeout] [-s seed] [-v "
-						"view_path] [-p player_paths...]\n",
-						argv[0]);
-				exit(EXIT_FAILURE);
-		}
-	}
-}
-
-void print_parameters(int width, int height, int delay, int timeout,
-					  unsigned int seed, char *view_path, char *player_paths[],
-					  int num_players) {
-	printf("Parameters:\n");
-	printf("Width: %d\n", width);
-	printf("Height: %d\n", height);
-	printf("Delay: %d ms\n", delay);
-	printf("Timeout: %d s\n", timeout);
-	printf("Seed: %u\n", seed);
-	printf("View path: %s\n", view_path ? view_path : "None");
-	printf("Player paths:\n");
-	for (int i = 0; i < num_players; i++) {
-		printf("  %s\n", player_paths[i]);
-	}
 }
 
 void read_player_moves(GameState *state, GameSync *sync,

@@ -18,6 +18,7 @@ VIEW_SRC = $(SRC_DIR)/view.c
 PLAYER_SRC = $(SRC_DIR)/player.c
 SHMEMORY_SRC = $(TADS_DIR)/shmemory.c
 GAME_LOGIC_SRC = $(TADS_DIR)/game_logic.c
+ARG_PARSE_SRC = $(TADS_DIR)/arg_parser.c
 
 # Archivos objeto
 MASTER_OBJ = $(BIN_DIR)/master_chomp.o
@@ -32,7 +33,7 @@ all: $(MASTER) $(VIEW) $(PLAYER)
 # Compilar master_chomp
 $(MASTER): $(MASTER_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ)
 	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $(MASTER) $(MASTER_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ)
+	$(CC) $(CFLAGS) -o $(MASTER) $(MASTER_OBJ) $(SHMEMORY_OBJ) $(GAME_LOGIC_OBJ) $(ARG_PARSE_SRC)
 
 # Compilar la vista
 $(VIEW): $(VIEW_OBJ)
