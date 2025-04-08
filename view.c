@@ -12,42 +12,13 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
-
-#include "tads/game_logic.h"
-#include "tads/shmemory.h"
-
-#define RED "\033[31m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN "\033[36m"
-#define GRAY "\x1b[90m"
-#define ORANGE "\033[38;5;208m"
-#define WHITE "\033[37m"
-
-#define DARK_RED "\033[48;5;88m"
-#define DARK_GREEN "\033[48;5;22m"
-#define DARK_YELLOW "\033[48;5;94m"
-#define DARK_BLUE "\033[48;5;18m"
-#define DARK_MAGENTA "\033[48;5;53m"
-#define DARK_CYAN "\033[48;5;30m"
-#define DARK_GRAY "\033[48;5;240m"
-#define DARK_ORANGE "\033[48;5;130m"
-#define DARK_WHITE "\033[48;5;255m"
+#include "view.h"
 
 const char *colors[]	  = {RED,  GREEN, YELLOW, BLUE, MAGENTA,
 							 CYAN, GRAY,  ORANGE, WHITE};
 const char *dark_colors[] = {DARK_RED,	DARK_GREEN,	  DARK_YELLOW,
 							 DARK_BLUE, DARK_MAGENTA, DARK_CYAN,
 							 DARK_GRAY, DARK_ORANGE,  DARK_WHITE};
-
-#define SHM_GAME_STATE "/game_state"
-#define SHM_GAME_SYNC "/game_sync"
-
-void print_board(GameState *state);
-
-void check_players_blocked(GameState *state);
 
 int main(int argc, char *argv[]) {
 	if (argc != 3) {
@@ -189,7 +160,7 @@ void print_board(GameState *state) {
 			if (!printed) {
 				int value = get_state_value(state, x, y);
 
-				if (value <= 0 && -value < 9) {
+				if (value <= 0 && -value < MAX_PLAYERS) {
 					printf("%s ■  \033[0m",
 						   colors[-value]); // Casilla coloreada
 				}
