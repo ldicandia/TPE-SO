@@ -28,18 +28,12 @@ int main(int argc, char *argv[]) {
 	unsigned int seed = time(NULL);
 	char *view_path	  = NULL;
 	char *player_paths[MAX_PLAYERS];
-	int num_players	  = 0;
-	bool param_failed = false;
+	int num_players = 0;
 
 	parse_arguments(argc, argv, &width, &height, &delay, &timeout, &seed,
 					&view_path, player_paths, &num_players);
 	print_parameters(width, height, delay, timeout, seed, view_path,
 					 player_paths, num_players);
-
-	if (param_failed) {
-		fprintf(stderr, "Error: Invalid parameters.\n");
-		exit(EXIT_FAILURE);
-	}
 
 	GameState *state;
 	GameSync *sync;
