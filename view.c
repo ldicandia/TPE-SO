@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
 	printf("\n🏆 \033[1mPuntajes:\033[0m\n");
 
-	int indices[8];
+	int indices[MAX_PLAYERS - 1];
 	for (int i = 0; i < get_num_players(state); i++)
 		indices[i] = i;
 
