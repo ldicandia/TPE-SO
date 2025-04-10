@@ -62,7 +62,10 @@ clean:
 
 # Ejecutar ChompChamps
 run: all
-	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 50
+	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 100
+
+run_chomp: all
+	./ChompChamps -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 100	
 
 # Test the executables
 test: all

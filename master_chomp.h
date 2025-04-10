@@ -6,7 +6,6 @@
 #include "tads/game_logic.h"
 #include "tads/shmemory.h"
 
-// Constants
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"
 #define MAX_PLAYERS 9
@@ -21,7 +20,6 @@
 #define TIMEOUT_CHECK_INTERVAL 100000 // microseconds
 #define MAX_STR_LEN 10
 
-// Function declarations
 pid_t spawn_process(const char *path, char *width, char *height);
 void check_results(int num_players, pid_t player_pids[], GameState *state,
 				   pid_t view_pid);

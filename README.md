@@ -42,7 +42,7 @@ Este proyecto implementa un juego llamado **ChompChamps**, que utiliza memoria c
 
 ## Compilación
 
-Para compilar el proyecto, ejecuta:
+Para ejecutar el proyecto:
 
 ```bash
 make run
@@ -52,4 +52,10 @@ Para testear con diferentes parametros:
 
 ```bash
 make test
+```
+
+Para ejecutar el proyecto con ChompChamps (provisto por la catedra), ejecuta:
+
+```bash
+make run_chomp
 ```
