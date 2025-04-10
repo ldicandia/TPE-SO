@@ -33,7 +33,7 @@ Este proyecto implementa un juego llamado **ChompChamps**, que utiliza memoria c
 
 4. **Sincronización**:
    - Se utilizan semáforos para coordinar la escritura y lectura del estado del juego entre los procesos.
-  
+  ```
 +-------------------+       +-------------------+       +-------------------+
 |                   |       |                   |       |                   |
 |      Player       |       |      Player       |       |      Player       |
@@ -68,7 +68,7 @@ Este proyecto implementa un juego llamado **ChompChamps**, que utiliza memoria c
                           |  - Muestra puntajes   |
                           |                       |
                           +-----------------------+
-
+```
 ## Requisitos
 
 - **Sistema Operativo**: Linux.
