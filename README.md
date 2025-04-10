@@ -33,6 +33,41 @@ Este proyecto implementa un juego llamado **ChompChamps**, que utiliza memoria c
 
 4. **Sincronización**:
    - Se utilizan semáforos para coordinar la escritura y lectura del estado del juego entre los procesos.
+  
++-------------------+       +-------------------+       +-------------------+
+|                   |       |                   |       |                   |
+|      Player       |       |      Player       |       |      Player       |
+|                   |       |                   |       |                   |
+|- Lee estado       |       |- Lee estado       |       |- Lee estado       |
+|- Envía movimiento |       |- Envía movimiento |       |- Envía movimiento |
+|                   |       |                   |       |                   |
++-------------------+       +-------------------+       +-------------------+
+          ^                           ^                           ^
+          |                           |                           |
+          +---------------------------+---------------------------+
+                                      |
+                                      v
+                          +-----------------------+
+                          |                       |
+                          |     Master Chomp      |
+                          |                       |
+                          | - Coordina lógica     |
+                          | - Actualiza estado    |
+                          | - Sincroniza procesos |
+                          |                       |
+                          +-----------------------+
+                                      ^
+                                      |
+                                      v
+                          +-----------------------+
+                          |                       |
+                          |         View          |
+                          |                       |
+                          |  - Lee estado         |
+                          |  - Muestra tablero    |
+                          |  - Muestra puntajes   |
+                          |                       |
+                          +-----------------------+
 
 ## Requisitos
 
