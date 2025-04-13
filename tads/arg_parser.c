@@ -82,8 +82,8 @@ void parse_arguments(int argc, char *argv[], int *width, int *height,
 }
 
 void print_parameters(int width, int height, int delay, int timeout,
-					  unsigned int seed, char *view_path, char *player_paths[],
-					  int num_players) {
+					  unsigned int seed, const char *view_path,
+					  const char *player_paths[], int num_players) {
 	printf("Parameters:\n");
 	printf("Width: %d\n", width);
 	printf("Height: %d\n", height);

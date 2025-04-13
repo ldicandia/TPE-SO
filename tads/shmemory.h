@@ -27,12 +27,6 @@ void semaphore_wait(sem_t *sem);
 
 void semaphore_post(sem_t *sem);
 
-bool is_reader_count_zero(GameSync *sync);
-
-void increment_reader_count(GameSync *sync);
-
-void decrement_reader_count(GameSync *sync);
-
 size_t get_game_sync_size(void);
 
 void semaphore_to_view(GameSync *sync);

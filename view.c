@@ -20,7 +20,7 @@ const char *dark_colors[] = {DARK_RED,	DARK_GREEN,	  DARK_YELLOW,
 							 DARK_BLUE, DARK_MAGENTA, DARK_CYAN,
 							 DARK_GRAY, DARK_ORANGE,  DARK_WHITE};
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
 	if (argc != 3) {
 		fprintf(stderr, "Usage: %s <width> <height>\n", argv[0]);
 		exit(EXIT_FAILURE);
@@ -213,18 +213,4 @@ void print_board(GameState *state) {
 
 	printf("\n\033[1m=========================================================="
 		   "=========================================\033[0m\n\n");
-}
-
-void check_players_blocked(GameState *state) {
-	bool all_blocked = true;
-	for (int i = 0; i < get_num_players(state); i++) {
-		if (!is_player_blocked(state, i)) {
-			all_blocked = false;
-			break;
-		}
-	}
-
-	if (all_blocked) {
-		set_game_over(state, true);
-	}
 }

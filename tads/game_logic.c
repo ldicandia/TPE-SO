@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdbool.h>
 
 struct Player {
 	char name[16];
@@ -51,11 +52,11 @@ void place_players(GameState *state) {
 }
 
 bool is_valid_move(GameState *state, int player_idx, unsigned char move) {
-	int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
-	int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
-	int dir	  = move;
-	int new_x = state->players[player_idx].x + dx[dir];
-	int new_y = state->players[player_idx].y + dy[dir];
+	const int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+	const int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+	int dir			= move;
+	int new_x		= state->players[player_idx].x + dx[dir];
+	int new_y		= state->players[player_idx].y + dy[dir];
 	return (new_x >= 0 && new_x < state->width && new_y >= 0 &&
 			new_y < state->height &&
 			state->board[new_y * state->width + new_x] > 0);
@@ -75,10 +76,10 @@ void process_move(GameState *state, int player_idx, unsigned char move) {
 		state->players[player_idx].invalid_moves++;
 	}
 	else {
-		int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
-		int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
-		int new_x = state->players[player_idx].x + dx[move];
-		int new_y = state->players[player_idx].y + dy[move];
+		const int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+		const int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+		int new_x		= state->players[player_idx].x + dx[move];
+		int new_y		= state->players[player_idx].y + dy[move];
 		state->players[player_idx].score +=
 			state->board[new_y * state->width + new_x];
 		state->players[player_idx].x = new_x;
@@ -113,7 +114,7 @@ void set_player_pid(GameState *state, int player_idx, pid_t pid) {
 	state->players[player_idx].pid = pid;
 }
 
-bool is_game_over(GameState *state) {
+bool is_game_over(const GameState *state) {
 	return state->game_over;
 }
 
@@ -129,7 +130,7 @@ int get_player_score(GameState *state, int player_idx) {
 	return state->players[player_idx].score;
 }
 
-int get_num_players(GameState *state) {
+int get_num_players(const GameState *state) {
 	return state->num_players;
 }
 
@@ -145,11 +146,11 @@ int get_player_y(GameState *state, int player_idx) {
 	return state->players[player_idx].y;
 }
 
-int get_width(GameState *state) {
+int get_width(const GameState *state) {
 	return state->width;
 }
 
-int get_height(GameState *state) {
+int get_height(const GameState *state) {
 	return state->height;
 }
 
@@ -161,7 +162,7 @@ int get_player_pid(GameState *state, int player_idx) {
 	return state->players[player_idx].pid;
 }
 
-void check_player_timeouts(GameState *state, time_t *last_move_times,
+void check_player_timeouts(GameState *state, const time_t *last_move_times,
 						   int timeout, int *blocked_players, int num_players) {
 	time_t current_time = time(NULL);
 	for (int i = 0; i < num_players; i++) {

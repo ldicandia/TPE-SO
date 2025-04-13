@@ -98,16 +98,6 @@ void semaphore_post(sem_t *sem) {
 	}
 }
 
-bool is_reader_count_zero(GameSync *sync) {
-	return sync->reader_count == 0;
-}
-void increment_reader_count(GameSync *sync) {
-	sync->reader_count++;
-}
-void decrement_reader_count(GameSync *sync) {
-	sync->reader_count--;
-}
-
 size_t get_game_sync_size(void) {
 	return sizeof(GameSync);
 }

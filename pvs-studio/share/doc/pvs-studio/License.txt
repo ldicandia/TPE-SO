@@ -1,0 +1,34 @@
+PVS-STUDIO LLC SOFTWARE LICENSE AGREEMENT
+The present License agreement is a legal agreement between you, end user (either an individual or a company, hereinafter referred to as Licensee) licensing the PVS-Studio software (hereinafter referred to as PVS-Studio), and PVS-Studio LLC - the developer and the exclusive owner of this software (hereinafter referred to as Licensor) for the accompanying PVS-Studio identified below.
+
+The PVS-Studio may include various applications, utilities and components and may be provided to you on multiple media or in multiple copies. Nonetheless, the PVS-Studio is designed and provided to you as a single product. You are not required to use all component parts of the PVS-Studio, but you may not unbundle the component parts of the PVS-Studio for use on different computers or by different users. You may not unbundle or repackage the PVS-Studio for distribution, transfer or resale.
+
+In case a user purchases the program PVS-Studio LLC may place information about the user's company on his site in "Customers" section. But if the user doesn't want this information to be available on the site because of some reasons, he or she should tell this to PVS-Studio LLC on the program via e-mail.
+
+Licensee may not modify, reverse engineer, decompile, disassemble, distribute, sub-license, sell, rent, lease, give or in any way transfer the Software, by any means or in any medium, including telecommunications. Licensee will use its best efforts and take all reasonable steps to protect the Software from unauthorized use, copying or dissemination, and will retain all proprietary notices intact.
+
+Notwithstanding contrary, Licensees Affiliates may access and use the PVS-Studio. "Licensees Affiliates" shall mean an individual or entity that (a) directly or indirectly controls, or is controlled by, or is under common control with a Licensee; and/or (b) owns or controls fifty percent (50.0%) or more of the outstanding voting securities of a Licensee.
+You have the right to use PVS-Studio for free by adding special comments to the source code of your project. To find out which comments should be added and the way to automate this process, read the article: "How to use PVS-Studio for Free".
+This mode is not intended for PVS-Studio evaluation. Trial license obtained through PVS-Studio web-site can be used to evaluate PVS-Studio.
+
+You should insert these comments when you have already decided to use the analyzer on a regular basis. You can remove these comments later, but it is possible to remove them only once.
+It is not allowed to add and remove the comments in the source code repeatedly. It is also not allowed to append comments multiple times and subsequently roll back the content of comments in source files to initial state using version control system. Such actions are intended to evade the terms that the source code should contain comments and are a violation of the analyzer usage agreement.
+
+PVS-Studio license includes
+•	right to use the product during 1 year;
+•	the duration of product use may be specified in the formal quote provided by the Licensor;
+•	a team of no more than 9 developers may use the product;
+•	if customer has an Enterprise License then the product may be used by the number of developers (including developers of Licensees Affiliates) specified by the License name;
+•	get new versions (including major-versions) for the duration of product use;
+•	get support by e-mail for the duration of product use;
+
+Renewing PVS-Studio license
+The license is renewed for one year. The price of renewing the license is 80% of the base price at the moment of renewal. The renewal discount can be applied by a user before the expiration of the current license or during a period of 1 month after the current license expiration date. After this period the license can be renewed for the full base price.
+
+Duration of license
+The Agreement is effective until terminated. Licensee may terminate this Agreement at any time and destroy the license info. The validity term of the Agreement is determined by the terms and conditions and is clearly indicated in the License info. The Agreement comes into force when you receive the license info. PVS-Studio LLC may terminate the Agreement immediately without notice if you fail to comply with any provision of the Agreement.
+
+Automatic Update Program
+The PVS-Studio software product performs automatic checks for the availability of updated version of itself by sending an update request to the remote server. An update request is fully anonymous. It is tied up to your personal account through a unique identifier and doesn’t contain any private data such as e-mail address, name, gender, age, home or work address, telephone number, etc.
+
+Participation in the Automatic Update Program is voluntary. You can choose to opt out from Automatic Update Program by contacting PVS-Studio customer support.

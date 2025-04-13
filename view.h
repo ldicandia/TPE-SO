@@ -31,6 +31,5 @@
 
 // Function declarations
 void print_board(GameState *state);
-void check_players_blocked(GameState *state);
 
 #endif // VIEW_H
