@@ -59,6 +59,11 @@ $(BIN_DIR):
 # Limpiar archivos generados
 clean:
 	rm -f $(BIN_DIR)/*
+	rm -f PVS-Studio.log
+	rm -f report.tasks
+	rm strace_out
+	rm .viminfo
+	rm .bash_history
 
 # Ejecutar ChompChamps
 run: all
@@ -103,4 +108,4 @@ test: all
 #make clean
 #pvs-studio-analyzer trace -- make
 #pvs-studio-analyzer analyze
-#plog-converter -a '64:1,2,3;GA:1,2,3;OP:1,2,3' -t tasklist -o report.tasks PVS-Studio
+#plog-converter -a '64:1,2,3;GA:1,2,3;OP:1,2,3' -t tasklist -o report.tasks PVS-Studio.log
