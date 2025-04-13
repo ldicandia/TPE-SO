@@ -1,6 +1,6 @@
 # Compilador y opciones
 CC = gcc
-CFLAGS = -Wall -Werror -I./tads
+CFLAGS = -Wall -Werror -I./tads -pthread -lrt
 
 # Directorios
 BIN_DIR = bin
