@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 	parse_arguments(argc, argv, &width, &height, &delay, &timeout, &seed,
 					&view_path, player_paths, &num_players);
 	print_parameters(width, height, delay, timeout, seed, view_path,
-					 player_paths, num_players);
+					 (const char **) player_paths, num_players);
 	sleep(1);
 
 	GameState *state;
