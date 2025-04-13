@@ -37,15 +37,12 @@ int main(int argc, char *argv[]) {
 	GameSync *sync	 = attach_shared_memory(SHM_GAME_SYNC, get_game_sync_size(),
 											O_RDWR, PROT_READ | PROT_WRITE);
 
-	while (true) {
-		if (is_game_over(state)) {
-			semaphore_game_over(sync);
-			break;
-		}
+	while (!is_game_over(state)) {
 		semaphore_pre_print(sync);
 		print_board(state);
 		semaphore_post_print(sync);
 	}
+	semaphore_game_over(sync);
 
 	system("clear");
 	// GAME OVER
