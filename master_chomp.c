@@ -90,7 +90,7 @@ void check_results(int num_players, pid_t player_pids[], GameState *state,
 		int status;
 		waitpid(player_pids[i], &status, 0);
 		if (WIFEXITED(status)) {
-			printf("Player %d (PID: %d)|| Exit status %d || Score = %u\n",
+			printf("Player %d (PID: %d)|| Exit status %d || Score = %d\n",
 				   i + 1, player_pids[i], WEXITSTATUS(status),
 				   get_player_score(state, i));
 		}

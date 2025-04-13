@@ -98,6 +98,9 @@ test: all
 #gcc master_chomp.c -o master_chomp
 #./bin/master_chomp -w 25 -h 25 -t 10 -p ./bin/player ./bin/player ./bin/player ./bin/player ./bin/player ./bin/player ./bin/player ./bin/player ./bin/player -v ./bin/view -d 50
 
+#cd pvs-studio
+#./install.sh
+#make clean
 #pvs-studio-analyzer trace -- make
 #pvs-studio-analyzer analyze
 #plog-converter -a '64:1,2,3;GA:1,2,3;OP:1,2,3' -t tasklist -o report.tasks PVS-Studio

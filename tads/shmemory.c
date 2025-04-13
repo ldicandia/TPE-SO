@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <string.h>
 
 struct GameSync {
 	sem_t sem_view_ready;	// Se usa para indicarle a la vista que hay cambios
@@ -151,15 +152,15 @@ void semaphore_post_move(GameSync *sync) {
 }
 
 void semaphore_game_over(GameSync *sync) {
-	sem_post(&sync->sem_master_ready);
+	semaphore_post(&sync->sem_master_ready);
 }
 
 void semaphore_pre_print(GameSync *sync) {
-	sem_wait(&sync->sem_view_ready);
+	semaphore_wait(&sync->sem_view_ready);
 }
 
 void semaphore_post_print(GameSync *sync) {
-	sem_post(&sync->sem_master_ready);
+	semaphore_post(&sync->sem_master_ready);
 }
 
 void initialize_pipes(int player_pipes[MAX_PLAYERS][2], int num_players) {

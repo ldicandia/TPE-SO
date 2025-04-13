@@ -45,7 +45,8 @@ void place_players(GameState *state) {
 		state->players[i].invalid_moves = 0;
 		state->players[i].valid_moves	= 0;
 		state->players[i].blocked		= false;
-		snprintf(state->players[i].name, 17, "Player%d", i + 1);
+		snprintf(state->players[i].name, sizeof(state->players[i].name),
+				 "Player%d", i + 1);
 	}
 }
 
