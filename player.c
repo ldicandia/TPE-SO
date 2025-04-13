@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	srand(getpid());
 
 	GameState *state = attach_shared_memory(
-		SHM_GAME_STATE, get_game_state_size(), O_RDWR, PROT_READ | PROT_WRITE);
+		SHM_GAME_STATE, get_game_state_size(), O_RDONLY, PROT_READ);
 	GameSync *sync = attach_shared_memory(SHM_GAME_SYNC, get_game_sync_size(),
 										  O_RDWR, PROT_READ | PROT_WRITE);
 
