@@ -61,15 +61,16 @@ clean:
 	rm -f $(BIN_DIR)/*
 	rm -f PVS-Studio.log
 	rm -f report.tasks
-	rm strace_out
-	rm .viminfo
-	rm .bash_history
+	rm -f strace_out
+	rm -f .viminfo
+	rm -f .bash_history
 
 # Ejecutar ChompChamps
 run: all
 	./$(MASTER) -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 100
 
 run_chomp: all
+	chmod +x ChompChamps
 	./ChompChamps -w 10 -h 10 -t 10 -p $(PLAYER) $(PLAYER) $(PLAYER) -v $(VIEW) -d 100	
 
 # Test the executables
