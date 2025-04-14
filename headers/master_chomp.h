@@ -3,8 +3,8 @@
 
 #include <sys/types.h>
 #include <time.h>
-#include "tads/game_logic.h"
-#include "tads/shmemory.h"
+#include "game_logic.h"
+#include "shmemory.h"
 
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"

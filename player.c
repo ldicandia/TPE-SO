@@ -13,8 +13,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "tads/game_logic.h"
-#include "tads/shmemory.h"
+#include "headers/game_logic.h"
+#include "headers/shmemory.h"
 
 #define SHM_GAME_STATE "/game_state"
 #define SHM_GAME_SYNC "/game_sync"

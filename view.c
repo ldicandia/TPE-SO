@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
-#include "view.h"
+#include "headers/view.h"
 
 const char *colors[]	  = {RED,  GREEN, YELLOW, BLUE, MAGENTA,
 							 CYAN, GRAY,  ORANGE, WHITE};

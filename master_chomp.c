@@ -17,10 +17,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "tads/arg_parser.h"
-#include "tads/game_logic.h"
-#include "tads/shmemory.h"
-#include "master_chomp.h"
+#include "headers/arg_parser.h"
+#include "headers/game_logic.h"
+#include "headers/shmemory.h"
+#include "headers/master_chomp.h"
 
 int main(int argc, char *argv[]) {
 	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, delay = DEFAULT_DELAY,

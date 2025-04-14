@@ -1,8 +1,8 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include "tads/game_logic.h"
-#include "tads/shmemory.h"
+#include "game_logic.h"
+#include "shmemory.h"
 
 // Color definitions
 #define RED "\033[31m"
