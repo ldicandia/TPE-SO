@@ -4,6 +4,7 @@
     "stdint.h": "c",
     "shmemory.h": "c",
     "semaphore.h": "c",
-    "fcntl.h": "c"
+    "fcntl.h": "c",
+    "mman.h": "c"
   }
 }

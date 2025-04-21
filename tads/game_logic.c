@@ -11,6 +11,9 @@
 #include <time.h>
 #include <stdbool.h>
 
+#define READ_END 0
+#define WRITE_END 1
+
 struct Player {
 	char name[16];
 	unsigned int score;
@@ -187,12 +190,20 @@ void spawn_players(GameState *state, int player_pipes[MAX_PLAYERS][2],
 		if (player_pids[i] == 0) {
 			dup2(player_pipes[i][1], STDOUT_FILENO);
 			close(player_pipes[i][0]);
+			close(player_pipes[i][1]);
+
+			for (int j = 0; j < num_players; j++) {
+				if (j != i) {
+					close(player_pipes[j][READ_END]);
+					close(player_pipes[j][WRITE_END]);
+				}
+			}
+
 			execl(player_paths[i], player_paths[i], width_str, height_str,
 				  NULL);
 			perror("execl");
 			exit(EXIT_FAILURE);
 		}
 		set_player_pid(state, i, player_pids[i]);
-		close(player_pipes[i][1]);
 	}
 }

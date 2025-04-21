@@ -11,6 +11,9 @@
 #include <unistd.h>
 #include <string.h>
 
+#define READ_END 0
+#define WRITE_END 1
+
 struct GameSync {
 	sem_t sem_view_ready;	// Se usa para indicarle a la vista que hay cambios
 							// por imprimir
@@ -158,10 +161,11 @@ void initialize_pipes(int player_pipes[MAX_PLAYERS][2], int num_players) {
 		if (pipe(player_pipes[i]) == -1) {
 			perror("pipe");
 			for (int j = 0; j < i; j++) {
-				close(player_pipes[j][0]);
-				close(player_pipes[j][1]);
+				close(player_pipes[j][READ_END]);
+				close(player_pipes[j][WRITE_END]);
 			}
 			exit(EXIT_FAILURE);
 		}
+		// close(player_pipes[i][1]);
 	}
 }

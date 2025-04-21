@@ -22,6 +22,9 @@
 #include "headers/shmemory.h"
 #include "headers/master_chomp.h"
 
+#define READ_END 0
+#define WRITE_END 1
+
 int main(int argc, char *argv[]) {
 	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, delay = DEFAULT_DELAY,
 		timeout		  = DEFAULT_TIMEOUT;
@@ -40,19 +43,22 @@ int main(int argc, char *argv[]) {
 	GameSync *sync;
 	initialize_shared_memory(&state, &sync, width, height, num_players, seed);
 
-	int player_pipes[MAX_PLAYERS][2];
-	initialize_pipes(player_pipes, num_players);
-
 	char width_str[MAX_STR_LEN], height_str[MAX_STR_LEN];
 	sprintf(width_str, "%d", width);
 	sprintf(height_str, "%d", height);
-
 	pid_t view_pid =
 		view_path ? spawn_process(view_path, width_str, height_str) : 0;
+
+	int player_pipes[MAX_PLAYERS][2];
+	initialize_pipes(player_pipes, num_players);
 
 	pid_t player_pids[MAX_PLAYERS];
 	spawn_players(state, player_pipes, player_paths, num_players, width_str,
 				  height_str, player_pids);
+
+	for (int j = 0; j < num_players; j++) {
+		close(player_pipes[j][WRITE_END]);
+	}
 
 	time_t *last_move_times = malloc(num_players * sizeof(time_t));
 	if (last_move_times == NULL) {
@@ -169,6 +175,7 @@ void cleanup_resources(int player_pipes[MAX_PLAYERS][2], int num_players,
 					   pid_t player_pids[]) {
 	for (int i = 0; i < num_players; i++) {
 		close(player_pipes[i][0]);
+		// close(player_pipes[i][1]);
 	}
 
 	check_results(num_players, player_pids, state, view_pid);
