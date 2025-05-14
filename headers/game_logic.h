@@ -58,11 +58,15 @@ int get_state_value(GameState *state, int x, int y);
 
 int get_player_pid(GameState *state, int player_idx);
 
+int get_players_valid_moves(GameState *state, int player_idx);
+
+int get_players_invalid_moves(GameState *state, int player_idx);
+
 void check_player_timeouts(GameState *state, const time_t *last_move_times,
-						   int timeout, int *blocked_players, int num_players);
+                           int timeout, int *blocked_players, int num_players);
 
 void spawn_players(GameState *state, int player_pipes[MAX_PLAYERS][2],
-				   char *player_paths[], int num_players, char *width_str,
-				   char *height_str, pid_t player_pids[MAX_PLAYERS]);
+                   char *player_paths[], int num_players, char *width_str,
+                   char *height_str, pid_t player_pids[MAX_PLAYERS]);
 
 #endif // GAME_LOGIC_H

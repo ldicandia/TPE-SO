@@ -2,12 +2,12 @@
 #define SHMEMORY_H
 
 #include <semaphore.h>
-#include <sys/types.h>
-#include <stddef.h>
-#include <time.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <time.h>
 
 #define MAX_PLAYERS 9
 
@@ -46,6 +46,8 @@ void semaphore_pre_print(GameSync *sync);
 void semaphore_post_print(GameSync *sync);
 
 void semaphore_game_over(GameSync *sync);
+
+void semaphore_wait_and_post_mutex(GameSync *sync);
 
 void initialize_pipes(int player_pipes[MAX_PLAYERS][2], int num_players);
 
